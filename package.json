@@ -6,7 +6,8 @@
     "dev": "tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "example:01": "tsx src/examples/01-first-call.ts"
   },
   "keywords": [],
   "author": "Adithya <captjacksparrow1109@gmail.com>",
