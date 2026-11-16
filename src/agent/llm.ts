@@ -34,6 +34,8 @@ export interface LlmRequest {
   messages: Message[];
   maxTokens: number;
   signal?: AbortSignal;
+  /** Called with each piece of text as the model generates it (optional). */
+  onTextDelta?: (text: string) => void;
 }
 
 export interface LlmUsage {
@@ -54,3 +56,4 @@ export interface LlmResponse {
 export interface LlmClient {
   complete(req: LlmRequest): Promise<LlmResponse>;
 }
+

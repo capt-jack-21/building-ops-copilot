@@ -1,4 +1,4 @@
-﻿import { executeTool } from "../tools/types.js";
+import { executeTool } from "../tools/types.js";
 import type { Gate, Tool, ToolContext, ToolOutcome } from "../tools/types.js";
 import type { Policy, PolicyDecision } from "../policy/policy.js";
 import type { ApprovalBroker } from "../approvals/broker.js";
@@ -9,6 +9,7 @@ export type AgentEvent =
       type: "model_call"; iteration: number; stopReason: string | null; ms: number;
       inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number;
     }
+  | { type: "text_delta"; iteration: number; text: string }
   | { type: "text"; text: string }
   | { type: "tool_start"; id: string; name: string; input: unknown }
   | { type: "tool_result"; id: string; name: string; isError: boolean; ms: number; content: string }
@@ -99,7 +100,7 @@ export async function runAgent(history: Message[], userText: string, opts: Agent
     signal?.throwIfAborted();
 
     const t0 = performance.now();
-    const res = await llm.complete({ system, tools: toolDefs, messages: history, maxTokens, signal });
+    const res = await llm.complete({ system, tools: toolDefs, messages: history, maxTokens, signal, onTextDelta: (text) => onEvent({ type: "text_delta", iteration, text }) });
     const cacheRead = res.usage.cacheReadTokens ?? 0;
     const cacheWrite = res.usage.cacheWriteTokens ?? 0;
     stats.inputTokens += res.usage.inputTokens;

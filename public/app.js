@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 const $ = (selector) => document.querySelector(selector);
 function el(tag, cls, text) {
@@ -145,6 +145,19 @@ function addUser(text) {
   scrollDown();
 }
 
+/** Re-render the live (streaming) bubble at most once per frame. */
+function scheduleLiveRender(turn) {
+  if (turn.livePending) return;
+  turn.livePending = true;
+  requestAnimationFrame(() => {
+    turn.livePending = false;
+    if (turn.live) {
+      renderMarkdown(turn.live, turn.liveText);
+      scrollDown();
+    }
+  });
+}
+
 function newTurn() {
   const root = el("div", "msg assistant");
   const body = el("div", "turn");
@@ -277,7 +290,26 @@ async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
       add(turn, row);
       break;
     }
+    case "text_delta": {
+      if (!turn.live) {
+        turn.live = el("div", "bubble md live");
+        turn.liveText = "";
+        add(turn, turn.live);
+      }
+      turn.liveText += d.text;
+      scheduleLiveRender(turn);
+      break;
+    }
     case "text": {
+      if (turn.live) {
+        const done = turn.live;
+        turn.live = null;
+        turn.liveText = "";
+        done.classList.remove("live");
+        renderMarkdown(done, d.text);
+        scrollDown();
+        break;
+      }
       const bubble = el("div", "bubble md");
       bubble.addEventListener("click", () => {
         turn.skip = true;
@@ -430,7 +462,7 @@ async function send(text) {
   await consumer;
 
   for (const entry of turn.approvals.values()) settleApproval(entry, "Cancelled", "no");
-  turn.thinking.remove(); if (window.OpsUi) window.OpsUi.onEvent({ event: "end", data: {} });
+  turn.thinking.remove(); if (turn.live) { turn.live.classList.remove("live"); turn.live = null; } if (window.OpsUi) window.OpsUi.onEvent({ event: "end", data: {} });
   state.controller = null;
   setRunning(false);
   input.focus();

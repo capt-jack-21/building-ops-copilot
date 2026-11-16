@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { AssistantBlock, LlmClient, LlmRequest, LlmResponse, ToolResultBlock } from "./llm.js";
 
 const tokens = (value: unknown): number => Math.ceil(JSON.stringify(value).length / 4);
@@ -65,6 +65,15 @@ function describe(block: ToolResultBlock): string[] {
   return [JSON.stringify(d).slice(0, 200)];
 }
 
+/** Emit text in small chunks with short pauses, like a model streaming tokens. */
+async function streamText(text: string, onDelta: (piece: string) => void, signal?: AbortSignal): Promise<void> {
+  for (let i = 0; i < text.length; i += 6) {
+    signal?.throwIfAborted();
+    onDelta(text.slice(i, i + 6));
+    await pause(12);
+  }
+}
+
 /** A scripted stand-in for the model, so the app runs with no API key. */
 export class DemoLlmClient implements LlmClient {
   async complete(req: LlmRequest): Promise<LlmResponse> {
@@ -73,6 +82,11 @@ export class DemoLlmClient implements LlmClient {
 
     const last = req.messages[req.messages.length - 1];
     const inputTokens = tokens(req.messages);
+    const streamed = async (r: LlmResponse): Promise<LlmResponse> => {
+      const text = r.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+      if (text && req.onTextDelta) await streamText(text, req.onTextDelta, req.signal);
+      return r;
+    };
     const say = (text: string): LlmResponse => ({
       content: [{ type: "text", text }],
       stopReason: "end_turn",
@@ -81,12 +95,12 @@ export class DemoLlmClient implements LlmClient {
 
     if (last?.role === "user" && typeof last.content === "string") {
       const blocks = plan(last.content);
-      if (!blocks) return say(HELP);
+      if (!blocks) return streamed(say(HELP));
       return { content: blocks, stopReason: "tool_use", usage: { inputTokens, outputTokens: tokens(blocks) } };
     }
     if (last?.role === "user" && Array.isArray(last.content)) {
       const lines = last.content.flatMap(describe);
-      return say(["Demo mode (scripted, no model): here is what the tools returned.", ...lines].join("\n"));
+      return streamed(say(["Demo mode (scripted, no model): here is what the tools returned.", ...lines].join("\n")));
     }
     throw new Error("The demo client cannot continue from this conversation state.");
   }

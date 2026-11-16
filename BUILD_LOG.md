@@ -81,3 +81,13 @@ A short record of how this project was built, one step at a time.
   - A snapshot endpoint (`/api/twin`) with a meter -> asset map lets the UI resolve any tool call to a tile.
   - "Recovered" (cleared in the last 24 h) tells a better story than hiding resolved alarms.
   - Pulses need a minimum hold time: tool calls finish in milliseconds.
+
+## 09e. Token streaming and command palette
+
+- Goal: show text as the model generates it; keyboard-first control of the console.
+- Learned:
+  - Streaming is an optional callback on the LlmClient request; the loop turns it into text_delta events and still emits the final text, so a cut stream loses nothing.
+  - messages.stream().finalMessage() returns the same usage object, so caching and cost reporting are unchanged.
+  - Throttle DOM updates to one per animation frame; markdown re-rendering per chunk is wasteful.
+  - A palette that drives the public UI (fill input, submit form, click buttons) cannot break the app's internals.
+  - Calm mode (reduced effects) is an accessibility and performance escape hatch for a glow-heavy design.

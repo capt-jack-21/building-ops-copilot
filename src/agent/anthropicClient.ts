@@ -24,9 +24,9 @@ function toSdkMessages(messages: Message[]): Anthropic.MessageParam[] {
 
 /**
  * Adapts the Anthropic SDK to our small LlmClient interface.
- * Prompt caching: breakpoints on the last tool, the system prompt and the last message,
- * so each loop iteration re-reads the shared prefix from cache instead of paying full price.
- * (Prompts below the model's minimum cacheable length are simply not cached.)
+ * Prompt caching: breakpoints on the last tool, the system prompt and the last message.
+ * Streaming: when the request has onTextDelta, text is forwarded as it is generated;
+ * the complete message (with usage) is still returned at the end.
  */
 export class AnthropicLlmClient implements LlmClient {
   private readonly client: Anthropic;
@@ -37,21 +37,29 @@ export class AnthropicLlmClient implements LlmClient {
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
-    const res = await this.client.messages.create(
-      {
-        model: this.model,
-        max_tokens: req.maxTokens,
-        system: [{ type: "text", text: req.system, cache_control: EPHEMERAL }],
-        tools: req.tools.map((t, i) => ({
-          name: t.name,
-          description: t.description,
-          input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
-          ...(i === req.tools.length - 1 ? { cache_control: EPHEMERAL } : {}),
-        })),
-        messages: toSdkMessages(req.messages),
-      },
-      req.signal ? { signal: req.signal } : undefined,
-    );
+    const params: Anthropic.MessageCreateParamsNonStreaming = {
+      model: this.model,
+      max_tokens: req.maxTokens,
+      system: [{ type: "text", text: req.system, cache_control: EPHEMERAL }],
+      tools: req.tools.map((t, i) => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
+        ...(i === req.tools.length - 1 ? { cache_control: EPHEMERAL } : {}),
+      })),
+      messages: toSdkMessages(req.messages),
+    };
+    const options = req.signal ? { signal: req.signal } : undefined;
+
+    let res: Anthropic.Message;
+    if (req.onTextDelta) {
+      const onDelta = req.onTextDelta;
+      const stream = this.client.messages.stream(params, options);
+      stream.on("text", (delta) => onDelta(delta));
+      res = await stream.finalMessage();
+    } else {
+      res = await this.client.messages.create(params, options);
+    }
 
     const content: AssistantBlock[] = [];
     for (const b of res.content) {

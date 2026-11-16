@@ -215,3 +215,27 @@ figure.chart svg { display: block; width: 100%; height: auto; }
 .lg-ok { border-color: var(--good); } .lg-rec { border-color: var(--blue); border-style: dashed; } .lg-info { border-color: var(--blue); }
 .lg-warn { border-color: var(--warn); background: rgba(251, 191, 36, 0.25); } .lg-crit { border-color: var(--bad); background: rgba(251, 90, 107, 0.3); }
 .lg-scan { border-color: var(--accent); background: rgba(34, 211, 238, 0.35); }
+
+/* streaming caret */
+.bubble.live:empty::after, .bubble.live > p:last-child::after, .bubble.live > ul:last-child > li:last-child::after { content: "\258D"; color: var(--accent); margin-left: 2px; animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
+/* command palette */
+.kbd-hint { font: 600 11px var(--mono); letter-spacing: 0.08em; color: var(--muted); background: transparent; border: 1px solid var(--line2); border-radius: 2px; padding: 3px 8px; cursor: pointer; }
+.kbd-hint:hover { color: var(--accent); border-color: var(--accent); }
+.pal-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(2, 6, 10, 0.62); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding: 14vh 16px 0; }
+.pal-box { width: min(620px, 100%); background: #0b121a; border: 1px solid var(--line2); border-radius: 3px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), var(--glow); display: flex; flex-direction: column; max-height: 62vh; }
+.pal-input { background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; font: 15px var(--mono); color: var(--text); outline: none; }
+.pal-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
+.pal-group { font: 600 10px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 10px 10px 4px; }
+.pal-item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 2px; cursor: pointer; }
+.pal-item.active { background: var(--accent-dim); box-shadow: inset 2px 0 var(--accent); }
+.pal-hint { color: var(--muted); font: 11px var(--mono); }
+.pal-empty { color: var(--muted); padding: 14px; text-align: center; font: 12px var(--mono); }
+.pal-foot { border-top: 1px solid var(--line); padding: 8px 14px; color: var(--muted); font: 11px var(--mono); }
+
+/* calm mode */
+body.calm { --glow: none; }
+body.calm::after { display: none; }
+body.calm .panel { backdrop-filter: none; }
+body.calm *, body.calm *::before, body.calm *::after { animation: none !important; }
