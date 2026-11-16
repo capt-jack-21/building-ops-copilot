@@ -9,13 +9,16 @@ export interface ToolContext {
   now: () => Date;
 }
 
-/** What the agent sees: a name, a description, a JSON schema, and a safe runner. */
+/** What the agent sees: a name, a description, a JSON schema, and safe parse/run functions. */
 export interface Tool {
   name: string;
   description: string;
   risk: Risk;
   jsonSchema: JsonSchema;
-  run(rawInput: unknown, ctx: ToolContext): Promise<unknown>;
+  /** Validate raw model input. Throws ZodError if invalid. */
+  parse(rawInput: unknown): unknown;
+  /** Validate (again, harmlessly) and execute. */
+  run(input: unknown, ctx: ToolContext): Promise<unknown>;
 }
 
 export type ErrorCategory = "validation" | "not_found" | "permission" | "internal";
@@ -54,26 +57,42 @@ export function defineTool<S extends z.ZodType>(def: {
     description: def.description,
     risk: def.risk,
     jsonSchema: toJsonSchema(def.inputSchema),
-    run: async (rawInput, ctx) => def.handler(def.inputSchema.parse(rawInput), ctx),
+    parse: (rawInput) => def.inputSchema.parse(rawInput),
+    run: async (input, ctx) => def.handler(def.inputSchema.parse(input), ctx),
   };
 }
 
 export interface ToolOutcome {
   content: string; // JSON text that goes into the tool_result block
   isError: boolean;
-  ms: number;
+  ms: number; // execution time only; time spent waiting for a human is excluded
 }
 
-/** Run a tool and ALWAYS return an outcome. Never throws, so the agent loop can't be crashed by a tool. */
-export async function executeTool(tool: Tool, rawInput: unknown, ctx: ToolContext): Promise<ToolOutcome> {
-  const t0 = performance.now();
+export type GateResult = { allow: true } | { allow: false; message: string };
+/** Called with the VALIDATED input, before the tool runs. */
+export type Gate = (parsedInput: unknown) => Promise<GateResult>;
+
+/**
+ * Validate, gate, run. Always returns an outcome and never throws,
+ * so a tool can never crash the agent loop.
+ */
+export async function executeTool(tool: Tool, rawInput: unknown, ctx: ToolContext, gate?: Gate): Promise<ToolOutcome> {
+  let t0 = performance.now();
   const done = (isError: boolean, payload: unknown): ToolOutcome => ({
     isError,
     content: JSON.stringify(payload),
     ms: performance.now() - t0,
   });
   try {
-    return done(false, await tool.run(rawInput, ctx));
+    const parsed = tool.parse(rawInput);
+    if (gate) {
+      const verdict = await gate(parsed);
+      if (!verdict.allow) {
+        return done(true, { error: { category: "permission", retryable: false, message: verdict.message } });
+      }
+    }
+    t0 = performance.now();
+    return done(false, await tool.run(parsed, ctx));
   } catch (err) {
     if (err instanceof z.ZodError) {
       return done(true, { error: { category: "validation", retryable: true, message: z.prettifyError(err) } });
@@ -81,9 +100,8 @@ export async function executeTool(tool: Tool, rawInput: unknown, ctx: ToolContex
     if (err instanceof ToolError) {
       return done(true, { error: { category: err.category, retryable: err.retryable, message: err.message } });
     }
-    // Unknown failure: log details server-side, give the model a safe generic message.
+    // Unknown failure (including a crashing gate): fail closed, log details server-side only.
     console.error(`[tool:${tool.name}] unexpected error:`, err);
     return done(true, { error: { category: "internal", retryable: false, message: "Unexpected error while running the tool." } });
   }
 }
-

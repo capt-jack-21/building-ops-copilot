@@ -1,5 +1,7 @@
 ﻿import { executeTool } from "../tools/types.js";
-import type { Tool, ToolContext, ToolOutcome } from "../tools/types.js";
+import type { Gate, Tool, ToolContext, ToolOutcome } from "../tools/types.js";
+import type { Policy, PolicyDecision } from "../policy/policy.js";
+import type { ApprovalBroker } from "../approvals/broker.js";
 import type { LlmClient, Message, ToolResultBlock, ToolUseBlock } from "./llm.js";
 
 export type AgentEvent =
@@ -7,6 +9,8 @@ export type AgentEvent =
   | { type: "text"; text: string }
   | { type: "tool_start"; id: string; name: string; input: unknown }
   | { type: "tool_result"; id: string; name: string; isError: boolean; ms: number; content: string }
+  | { type: "approval_required"; id: string; name: string; input: unknown; reason: string }
+  | { type: "approval_result"; id: string; name: string; approved: boolean }
   | { type: "warning"; message: string };
 
 export type Termination = "end_turn" | "max_iterations" | "max_tokens" | "other";
@@ -16,6 +20,8 @@ export interface AgentOptions {
   tools: Tool[];
   ctx: ToolContext;
   system: string;
+  policy?: Policy;
+  approvals?: ApprovalBroker;
   maxTokens?: number;
   maxIterations?: number;
   onEvent?: (event: AgentEvent) => void;
@@ -46,7 +52,7 @@ function unknownTool(name: string): ToolOutcome {
  * array again continues the conversation.
  */
 export async function runAgent(history: Message[], userText: string, opts: AgentOptions): Promise<AgentResult> {
-  const { llm, tools, ctx, system, onEvent = () => undefined, maxTokens = 1024, maxIterations = 10 } = opts;
+  const { llm, tools, ctx, system, policy, approvals, onEvent = () => undefined, maxTokens = 1024, maxIterations = 10 } = opts;
   const started = performance.now();
   const toolDefs = tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.jsonSchema }));
   const stats = { toolCalls: 0, inputTokens: 0, outputTokens: 0 };
@@ -62,6 +68,25 @@ export async function runAgent(history: Message[], userText: string, opts: Agent
     outputTokens: stats.outputTokens,
     totalMs: performance.now() - started,
   });
+
+  /** Policy decides; if approval is needed, a human decides. Runs on VALIDATED input. */
+  const makeGate = (tool: Tool, use: ToolUseBlock): Gate => async (parsed) => {
+    const decision: PolicyDecision = policy ? policy.evaluate(tool, parsed) : { action: "allow" };
+    if (decision.action === "allow") return { allow: true };
+    if (decision.action === "deny") {
+      onEvent({ type: "warning", message: `Policy denied ${tool.name}: ${decision.reason}` });
+      return { allow: false, message: decision.reason };
+    }
+    onEvent({ type: "approval_required", id: use.id, name: tool.name, input: parsed, reason: decision.reason });
+    if (!approvals) {
+      return { allow: false, message: "This action needs human approval, but no approver is available." };
+    }
+    const answer = await approvals.request({ id: use.id, toolName: tool.name, input: parsed, reason: decision.reason });
+    onEvent({ type: "approval_result", id: use.id, name: tool.name, approved: answer.approved });
+    return answer.approved
+      ? { allow: true }
+      : { allow: false, message: answer.note ?? "The user declined this action. Do not retry it." };
+  };
 
   history.push({ role: "user", content: userText });
 
@@ -96,7 +121,7 @@ export async function runAgent(history: Message[], userText: string, opts: Agent
       uses.map(async (use) => {
         onEvent({ type: "tool_start", id: use.id, name: use.name, input: use.input });
         const tool = tools.find((t) => t.name === use.name);
-        const outcome = tool ? await executeTool(tool, use.input, ctx) : unknownTool(use.name);
+        const outcome = tool ? await executeTool(tool, use.input, ctx, makeGate(tool, use)) : unknownTool(use.name);
         stats.toolCalls++;
         onEvent({ type: "tool_result", id: use.id, name: use.name, isError: outcome.isError, ms: outcome.ms, content: outcome.content });
         return { type: "tool_result" as const, tool_use_id: use.id, content: outcome.content, is_error: outcome.isError };

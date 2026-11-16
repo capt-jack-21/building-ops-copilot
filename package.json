@@ -13,7 +13,8 @@
     "example:04-checks": "tsx src/examples/04-loop-checks.ts",
     "example:04": "tsx src/examples/04-agent-cli.ts",
     "example:05-checks": "tsx src/examples/05-tool-checks.ts",
-    "chat": "tsx src/examples/05-chat.ts"
+    "chat": "tsx src/examples/06-chat.ts",
+    "example:06-checks": "tsx src/examples/06-policy-checks.ts"
   },
   "keywords": [],
   "author": "Adithya <captjacksparrow1109@gmail.com>",

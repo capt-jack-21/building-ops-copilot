@@ -41,3 +41,14 @@ A short record of how this project was built, one step at a time.
   - Bound tool output (200 buckets max) and make errors suggest a fix, so the model can self-correct.
   - Do the arithmetic in code (baseline comparison), not in the model.
   - Mark state-changing tools (`risk: "write"`); approvals come next.
+
+## 06. Policy hook and human approval
+
+- Goal: stop state-changing actions until a person approves, without trusting the model to decide.
+- Examples: `npm run example:06-checks` (offline) and `npm run chat` (interactive).
+- Learned:
+  - Order is validate, then policy, then approval, then run; the human sees exactly the input that executes.
+  - Default by declared risk (fail safe): anything that is not a read needs approval.
+  - Never key a safety rule on a field the model chooses freely (a model could pick a lower priority to skip approval).
+  - A declined action is a normal `permission` result; the prompt tells the model not to work around it.
+  - No approver means denied (fail closed). Concurrent prompts are queued.

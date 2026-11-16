@@ -6,7 +6,8 @@ export const createTicket = defineTool({
   description:
     "Create a maintenance ticket. This CHANGES STATE: only call it when the user has explicitly asked " +
     "to raise a ticket, and include what you found (alarm codes, meter values) in the description. " +
-    "Priority 'critical' may require human approval before the ticket is created.",
+    "A person must approve tickets before they are created; the system handles that. " +
+    "Choose the priority purely from the severity of the situation, never to avoid approval.",
   risk: "write",
   inputSchema: z.object({
     title: z.string().min(3).max(120).describe("Short summary, e.g. 'Chiller 2 compressor trip'"),
