@@ -1,13 +1,4 @@
-﻿import type {
-  Alarm,
-  Asset,
-  AssetType,
-  Building,
-  Meter,
-  Protocol,
-  Quantity,
-  Reading,
-} from "../domain/types.js";
+﻿import type { Alarm, Asset, AssetType, Building, Meter, Protocol, Quantity, Reading } from "../domain/types.js";
 
 export interface SeedData {
   buildings: Building[];
@@ -74,8 +65,7 @@ export function generateSeed(now: Date = new Date(), seed = 42): SeedData {
   const start = end - (STEPS - 1) * STEP_MS;
   const tripFrom = end - 15 * HOUR_MS;
   const tripTo = end - 11 * HOUR_MS;
-  const inTrip = (buildingId: string, ms: number): boolean =>
-    buildingId === "bld-01" && ms >= tripFrom && ms <= tripTo;
+  const inTrip = (buildingId: string, ms: number): boolean => buildingId === "bld-01" && ms >= tripFrom && ms <= tripTo;
 
   const buildings: Building[] = [];
   const assets: Asset[] = [];
@@ -127,55 +117,135 @@ export function generateSeed(now: Date = new Date(), seed = 42): SeedData {
       readings.set(meterId, rows);
     };
 
-    addMeter("main", "Main incomer", "energy_meter", "main-kw", "Main incomer power", "power_kw", "modbus",
-      (c) => 420 * scale * load(c.hour) + 8 * c.noise());
+    addMeter(
+      "main",
+      "Main incomer",
+      "energy_meter",
+      "main-kw",
+      "Main incomer power",
+      "power_kw",
+      "modbus",
+      (c) => 420 * scale * load(c.hour) + 8 * c.noise(),
+    );
 
-    addMeter("chiller-1", "Chiller 1", "chiller", "ch1-kw", "Chiller 1 power", "power_kw", "bacnet",
-      (c) => 180 * scale * load(c.hour) + 4 * c.noise());
-    addMeter("chiller-1", "Chiller 1", "chiller", "ch1-temp", "Chiller 1 supply water temp", "temp_c", "bacnet",
-      (c) => 6.5 + 0.3 * c.noise());
+    addMeter(
+      "chiller-1",
+      "Chiller 1",
+      "chiller",
+      "ch1-kw",
+      "Chiller 1 power",
+      "power_kw",
+      "bacnet",
+      (c) => 180 * scale * load(c.hour) + 4 * c.noise(),
+    );
+    addMeter(
+      "chiller-1",
+      "Chiller 1",
+      "chiller",
+      "ch1-temp",
+      "Chiller 1 supply water temp",
+      "temp_c",
+      "bacnet",
+      (c) => 6.5 + 0.3 * c.noise(),
+    );
 
-    addMeter("chiller-2", "Chiller 2", "chiller", "ch2-kw", "Chiller 2 power", "power_kw", "bacnet",
-      (c) => (inTrip(b.id, c.ms) ? 2 + Math.abs(c.noise()) : 170 * scale * load(c.hour) + 4 * c.noise()));
-    addMeter("chiller-2", "Chiller 2", "chiller", "ch2-temp", "Chiller 2 supply water temp", "temp_c", "bacnet",
-      (c) => (inTrip(b.id, c.ms) ? 13 + 0.6 * c.noise() : 6.6 + 0.3 * c.noise()));
+    addMeter("chiller-2", "Chiller 2", "chiller", "ch2-kw", "Chiller 2 power", "power_kw", "bacnet", (c) =>
+      inTrip(b.id, c.ms) ? 2 + Math.abs(c.noise()) : 170 * scale * load(c.hour) + 4 * c.noise(),
+    );
+    addMeter("chiller-2", "Chiller 2", "chiller", "ch2-temp", "Chiller 2 supply water temp", "temp_c", "bacnet", (c) =>
+      inTrip(b.id, c.ms) ? 13 + 0.6 * c.noise() : 6.6 + 0.3 * c.noise(),
+    );
 
-    addMeter("ahu-1", "AHU 1", "ahu", "ahu1-temp", "AHU 1 supply air temp", "temp_c", "bacnet",
-      (c) => 14 + 0.5 * c.noise());
+    addMeter(
+      "ahu-1",
+      "AHU 1",
+      "ahu",
+      "ahu1-temp",
+      "AHU 1 supply air temp",
+      "temp_c",
+      "bacnet",
+      (c) => 14 + 0.5 * c.noise(),
+    );
 
-    addMeter("fuel-1", "Generator 1 diesel tank", "fuel_tank", "fuel-pct", "Generator 1 fuel level", "level_pct", "modbus",
-      (c) => fuel[0] + (fuel[1] - fuel[0]) * c.progress + 0.2 * c.noise());
+    addMeter(
+      "fuel-1",
+      "Generator 1 diesel tank",
+      "fuel_tank",
+      "fuel-pct",
+      "Generator 1 fuel level",
+      "level_pct",
+      "modbus",
+      (c) => fuel[0] + (fuel[1] - fuel[0]) * c.progress + 0.2 * c.noise(),
+    );
 
-    addMeter("pump-1", "Chilled water pump 1", "pump", "pump1-flow", "Pump 1 flow", "flow_lps", "modbus",
-      (c) => 24 * scale * (0.4 + 0.6 * load(c.hour)) + 0.5 * c.noise());
+    addMeter(
+      "pump-1",
+      "Chilled water pump 1",
+      "pump",
+      "pump1-flow",
+      "Pump 1 flow",
+      "flow_lps",
+      "modbus",
+      (c) => 24 * scale * (0.4 + 0.6 * load(c.hour)) + 0.5 * c.noise(),
+    );
   }
 
   const iso = (ms: number): string => new Date(ms).toISOString();
   const alarms: Alarm[] = [
     {
-      id: "al-001", buildingId: "bld-01", assetId: "a-01-chiller-2", severity: "critical",
-      code: "CH2_TRIP", message: "Chiller 2 compressor safety trip",
-      raisedAt: iso(tripFrom), clearedAt: iso(tripTo), acknowledged: true,
+      id: "al-001",
+      buildingId: "bld-01",
+      assetId: "a-01-chiller-2",
+      severity: "critical",
+      code: "CH2_TRIP",
+      message: "Chiller 2 compressor safety trip",
+      raisedAt: iso(tripFrom),
+      clearedAt: iso(tripTo),
+      acknowledged: true,
     },
     {
-      id: "al-002", buildingId: "bld-01", assetId: "a-01-chiller-2", severity: "warning",
-      code: "CH2_HIGH_SUPPLY_TEMP", message: "Chiller 2 supply water temperature above limit",
-      raisedAt: iso(tripFrom + 30 * 60 * 1000), clearedAt: iso(tripTo + HOUR_MS), acknowledged: true,
+      id: "al-002",
+      buildingId: "bld-01",
+      assetId: "a-01-chiller-2",
+      severity: "warning",
+      code: "CH2_HIGH_SUPPLY_TEMP",
+      message: "Chiller 2 supply water temperature above limit",
+      raisedAt: iso(tripFrom + 30 * 60 * 1000),
+      clearedAt: iso(tripTo + HOUR_MS),
+      acknowledged: true,
     },
     {
-      id: "al-003", buildingId: "bld-02", assetId: "a-02-fuel-1", severity: "warning",
-      code: "GEN1_FUEL_LOW", message: "Generator 1 diesel level below 20%",
-      raisedAt: iso(end - 12 * HOUR_MS), clearedAt: null, acknowledged: false,
+      id: "al-003",
+      buildingId: "bld-02",
+      assetId: "a-02-fuel-1",
+      severity: "warning",
+      code: "GEN1_FUEL_LOW",
+      message: "Generator 1 diesel level below 20%",
+      raisedAt: iso(end - 12 * HOUR_MS),
+      clearedAt: null,
+      acknowledged: false,
     },
     {
-      id: "al-004", buildingId: "bld-01", assetId: "a-01-ahu-1", severity: "info",
-      code: "AHU1_FILTER_DP", message: "AHU 1 filter differential pressure high",
-      raisedAt: iso(end - 48 * HOUR_MS), clearedAt: null, acknowledged: false,
+      id: "al-004",
+      buildingId: "bld-01",
+      assetId: "a-01-ahu-1",
+      severity: "info",
+      code: "AHU1_FILTER_DP",
+      message: "AHU 1 filter differential pressure high",
+      raisedAt: iso(end - 48 * HOUR_MS),
+      clearedAt: null,
+      acknowledged: false,
     },
     {
-      id: "al-005", buildingId: "bld-02", assetId: "a-02-pump-1", severity: "warning",
-      code: "PUMP1_LOW_FLOW", message: "Chilled water pump 1 low flow",
-      raisedAt: iso(end - 72 * HOUR_MS), clearedAt: iso(end - 72 * HOUR_MS + 40 * 60 * 1000), acknowledged: true,
+      id: "al-005",
+      buildingId: "bld-02",
+      assetId: "a-02-pump-1",
+      severity: "warning",
+      code: "PUMP1_LOW_FLOW",
+      message: "Chilled water pump 1 low flow",
+      raisedAt: iso(end - 72 * HOUR_MS),
+      clearedAt: iso(end - 72 * HOUR_MS + 40 * 60 * 1000),
+      acknowledged: true,
     },
   ];
 

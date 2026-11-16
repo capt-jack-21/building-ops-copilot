@@ -19,8 +19,7 @@ export interface ToolResultBlock {
 export type AssistantBlock = TextBlock | ToolUseBlock;
 
 export type Message =
-  | { role: "user"; content: string | ToolResultBlock[] }
-  | { role: "assistant"; content: AssistantBlock[] };
+  { role: "user"; content: string | ToolResultBlock[] } | { role: "assistant"; content: AssistantBlock[] };
 
 export interface LlmTool {
   name: string;
@@ -56,4 +55,3 @@ export interface LlmResponse {
 export interface LlmClient {
   complete(req: LlmRequest): Promise<LlmResponse>;
 }
-

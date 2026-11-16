@@ -7,10 +7,31 @@
   const host = document.querySelector("#twin");
   const chatInput = document.querySelector("#input");
 
-  const W = 260, TILE_W = 72, TILE_H = 42, GAP = 6, X0 = 16, Y0 = 36, ROW_H = 60;
-  const SLOTS = { ahu: [[0, 0]], energy_meter: [[1, 0]], fuel_tank: [[1, 1]], chiller: [[2, 0], [2, 1]], pump: [[2, 2]] };
+  const W = 260,
+    TILE_W = 72,
+    TILE_H = 42,
+    GAP = 6,
+    X0 = 16,
+    Y0 = 36,
+    ROW_H = 60;
+  const SLOTS = {
+    ahu: [[0, 0]],
+    energy_meter: [[1, 0]],
+    fuel_tank: [[1, 1]],
+    chiller: [
+      [2, 0],
+      [2, 1],
+    ],
+    pump: [[2, 2]],
+  };
   const ROW_LABELS = ["ROOF", "SERVICES", "PLANT"];
-  const STATUS_LABEL = { ok: "all clear", recovered: "recovered", info: "info", warning: "warning", critical: "critical" };
+  const STATUS_LABEL = {
+    ok: "all clear",
+    recovered: "recovered",
+    info: "info",
+    warning: "warning",
+    critical: "critical",
+  };
   const UNIT = { degC: "\u00b0C" };
 
   const state = { meters: {}, buildings: [], tiles: new Map(), frames: new Map() };
@@ -33,10 +54,18 @@
 
   const fmt = (v) => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
   const short = (name) =>
-    name.replace("Chilled water pump", "CHW pump").replace("Generator", "Gen").replace(" diesel tank", " fuel").replace("Main incomer", "Main in").slice(0, 12);
+    name
+      .replace("Chilled water pump", "CHW pump")
+      .replace("Generator", "Gen")
+      .replace(" diesel tank", " fuel")
+      .replace("Main incomer", "Main in")
+      .slice(0, 12);
   const headline = (a) => (a.headline ? `${fmt(a.headline.value)} ${UNIT[a.headline.unit] ?? a.headline.unit}` : "-");
   const tooltip = (a) =>
-    [`${a.name} (${a.id})`, ...a.alarms.map((x) => `${x.code} - ${x.active ? "active" : "cleared"}: ${x.message}`)].join("\n");
+    [
+      `${a.name} (${a.id})`,
+      ...a.alarms.map((x) => `${x.code} - ${x.active ? "active" : "cleared"}: ${x.message}`),
+    ].join("\n");
 
   /** Assign each asset a grid cell by type; unknown types fall into the next free cell. */
   function place(assets) {
@@ -68,7 +97,11 @@
     const a = p.asset;
     const x = X0 + p.col * (TILE_W + GAP);
     const y = Y0 + p.row * ROW_H;
-    const g = snode("g", { tabindex: "0", role: "button", "aria-label": `${a.name}, ${STATUS_LABEL[a.status]}` }, "tile " + a.status);
+    const g = snode(
+      "g",
+      { tabindex: "0", role: "button", "aria-label": `${a.name}, ${STATUS_LABEL[a.status]}` },
+      "tile " + a.status,
+    );
     g.append(snode("title", {}, "", tooltip(a)));
     g.append(snode("rect", { x, y, width: TILE_W, height: TILE_H, rx: 2 }));
     g.append(snode("text", { x: x + 6, y: y + 17 }, "t-name", short(a.name)));
@@ -148,13 +181,18 @@
     const args = input && typeof input === "object" ? input : {};
     const ids = new Set();
     const assetId =
-      typeof args.meter_id === "string" ? state.meters[args.meter_id] : typeof args.asset_id === "string" ? args.asset_id : undefined;
+      typeof args.meter_id === "string"
+        ? state.meters[args.meter_id]
+        : typeof args.asset_id === "string"
+          ? args.asset_id
+          : undefined;
     if (assetId) {
       ids.add(assetId);
       for (const b of state.buildings) if (b.assets.some((a) => a.id === assetId)) ids.add(b.id);
       return [...ids];
     }
-    const scope = typeof args.building_id === "string" ? state.buildings.filter((b) => b.id === args.building_id) : state.buildings;
+    const scope =
+      typeof args.building_id === "string" ? state.buildings.filter((b) => b.id === args.building_id) : state.buildings;
     for (const b of scope) {
       ids.add(b.id);
       if (typeof args.asset_type === "string") for (const a of b.assets) if (a.type === args.asset_type) ids.add(a.id);

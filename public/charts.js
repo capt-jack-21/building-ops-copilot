@@ -80,7 +80,12 @@
   /* ---------- draw the chart ---------- */
 
   function drawChart(points, title, unit, key) {
-    const W = 640, H = 200, L = 46, R = 14, T = 20, B = 28;
+    const W = 640,
+      H = 200,
+      L = 46,
+      R = 14,
+      T = 20,
+      B = 28;
     const t0 = points[0].t;
     const t1 = points[points.length - 1].t;
     const values = points.map((p) => p.v);
@@ -108,7 +113,12 @@
     const head = node("div", "chart-head");
     head.append(node("span", "chart-title", title + (unit ? " (" + unit + ")" : "")));
     const stats = node("span", "chart-stats");
-    for (const [label, val] of [["min", minV], ["avg", avgV], ["max", maxV], ["last", lastV]]) {
+    for (const [label, val] of [
+      ["min", minV],
+      ["avg", avgV],
+      ["max", maxV],
+      ["last", lastV],
+    ]) {
       stats.append(label + " ", node("b", "", fmtVal(val)), "  ");
     }
     head.append(stats);
@@ -121,7 +131,9 @@
       svg.append(snode("text", { x: L - 6, y: y(value) + 3.5, "text-anchor": "end" }, "c-axis", fmtVal(value)));
     }
     svg.append(snode("text", { x: L, y: H - 8, "text-anchor": "start" }, "c-axis", fmtTime(t0)));
-    svg.append(snode("text", { x: (L + W - R) / 2, y: H - 8, "text-anchor": "middle" }, "c-axis", fmtTime((t0 + t1) / 2)));
+    svg.append(
+      snode("text", { x: (L + W - R) / 2, y: H - 8, "text-anchor": "middle" }, "c-axis", fmtTime((t0 + t1) / 2)),
+    );
     svg.append(snode("text", { x: W - R, y: H - 8, "text-anchor": "end" }, "c-axis", fmtTime(t1) + " UTC"));
 
     const line = points.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");

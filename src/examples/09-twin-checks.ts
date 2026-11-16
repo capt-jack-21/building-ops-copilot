@@ -21,19 +21,45 @@ const snap = await buildTwin(repo, now);
 const asset = (id: string) => snap.buildings.flatMap((b) => b.assets).find((a) => a.id === id);
 const building = (id: string) => snap.buildings.find((b) => b.id === id);
 
-check("two buildings with six assets each", snap.buildings.length === 2 && snap.buildings.every((b) => b.assets.length === 6));
+check(
+  "two buildings with six assets each",
+  snap.buildings.length === 2 && snap.buildings.every((b) => b.assets.length === 6),
+);
 
 const ch2 = asset("a-01-chiller-2");
-check("chiller 2: trip cleared within 24 h -> recovered", ch2?.status === "recovered" && ch2.alarms.some((a) => a.code === "CH2_TRIP" && !a.active), ch2?.status);
+check(
+  "chiller 2: trip cleared within 24 h -> recovered",
+  ch2?.status === "recovered" && ch2.alarms.some((a) => a.code === "CH2_TRIP" && !a.active),
+  ch2?.status,
+);
 
 const fuel = asset("a-02-fuel-1");
-check("generator fuel: active low-fuel alarm -> warning", fuel?.status === "warning" && fuel.alarms.some((a) => a.code === "GEN1_FUEL_LOW" && a.active), fuel?.status);
-check("generator fuel headline is the low tank level", fuel?.headline?.quantity === "level_pct" && fuel.headline.value < 20, String(fuel?.headline?.value));
+check(
+  "generator fuel: active low-fuel alarm -> warning",
+  fuel?.status === "warning" && fuel.alarms.some((a) => a.code === "GEN1_FUEL_LOW" && a.active),
+  fuel?.status,
+);
+check(
+  "generator fuel headline is the low tank level",
+  fuel?.headline?.quantity === "level_pct" && fuel.headline.value < 20,
+  String(fuel?.headline?.value),
+);
 check("AHU 1: info alarm -> info", asset("a-01-ahu-1")?.status === "info");
 check("an alarm cleared 72 h ago does not colour the pump", asset("a-02-pump-1")?.status === "ok");
-check("building status is the worst of its assets", building("bld-01")?.status === "info" && building("bld-02")?.status === "warning", `${building("bld-01")?.status} / ${building("bld-02")?.status}`);
-check("every asset has a headline reading", snap.buildings.every((b) => b.assets.every((a) => a.headline !== null)));
-check("meter map covers all 16 meters", Object.keys(snap.meters).length === 16 && snap.meters["m-01-ch2-kw"] === "a-01-chiller-2", String(Object.keys(snap.meters).length));
+check(
+  "building status is the worst of its assets",
+  building("bld-01")?.status === "info" && building("bld-02")?.status === "warning",
+  `${building("bld-01")?.status} / ${building("bld-02")?.status}`,
+);
+check(
+  "every asset has a headline reading",
+  snap.buildings.every((b) => b.assets.every((a) => a.headline !== null)),
+);
+check(
+  "meter map covers all 16 meters",
+  Object.keys(snap.meters).length === 16 && snap.meters["m-01-ch2-kw"] === "a-01-chiller-2",
+  String(Object.keys(snap.meters).length),
+);
 
 const app = createApp({
   llm: new DemoLlmClient(),

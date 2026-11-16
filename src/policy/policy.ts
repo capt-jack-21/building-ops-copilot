@@ -1,9 +1,7 @@
 ﻿import type { Tool } from "../tools/types.js";
 
 export type PolicyDecision =
-  | { action: "allow" }
-  | { action: "require_approval"; reason: string }
-  | { action: "deny"; reason: string };
+  { action: "allow" } | { action: "require_approval"; reason: string } | { action: "deny"; reason: string };
 
 export interface Policy {
   evaluate(tool: Tool, input: unknown): PolicyDecision;

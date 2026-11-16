@@ -102,6 +102,8 @@ export async function executeTool(tool: Tool, rawInput: unknown, ctx: ToolContex
     }
     // Unknown failure (including a crashing gate): fail closed, log details server-side only.
     console.error(`[tool:${tool.name}] unexpected error:`, err);
-    return done(true, { error: { category: "internal", retryable: false, message: "Unexpected error while running the tool." } });
+    return done(true, {
+      error: { category: "internal", retryable: false, message: "Unexpected error while running the tool." },
+    });
   }
 }

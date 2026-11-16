@@ -59,7 +59,12 @@
       { group: "Session", label: "Focus the message box", hint: "", run: () => input.focus() },
       { group: "View", label: "Expand all tool cards", hint: "", run: () => setAllTools(true) },
       { group: "View", label: "Collapse all tool cards", hint: "", run: () => setAllTools(false) },
-      { group: "View", label: calm ? "Calm mode: turn off" : "Calm mode: reduce glow and motion", hint: "", run: () => applyCalm(!calm) },
+      {
+        group: "View",
+        label: calm ? "Calm mode: turn off" : "Calm mode: reduce glow and motion",
+        hint: "",
+        run: () => applyCalm(!calm),
+      },
     ];
   }
 

@@ -1,7 +1,6 @@
 ﻿// A tiny Server-Sent Events reader, shared by the checks and the smoke client.
 export interface SseEvent {
   event: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
 }
 

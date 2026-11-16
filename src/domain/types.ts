@@ -84,4 +84,3 @@ export interface TelemetryRepository {
   listAlarms(filter?: AlarmFilter): Promise<Alarm[]>;
   createTicket(input: NewTicket): Promise<Ticket>;
 }
-

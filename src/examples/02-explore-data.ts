@@ -33,8 +33,11 @@ try {
   const H = 3600 * 1000;
   const iso = (ms: number): string => new Date(ms).toISOString();
   const tripRows = await repo.queryRange("m-01-ch2-kw", iso(now.getTime() - 14 * H), iso(now.getTime() - 12 * H));
-  check("chiller 2 power is near zero during the trip", tripRows.length > 0 && tripRows.every((r) => r.value < 10),
-    `${tripRows.length} rows`);
+  check(
+    "chiller 2 power is near zero during the trip",
+    tripRows.length > 0 && tripRows.every((r) => r.value < 10),
+    `${tripRows.length} rows`,
+  );
 
   const normalRows = await repo.queryRange("m-01-ch2-kw", iso(now.getTime() - 30 * H), iso(now.getTime() - 26 * H));
   const avg = normalRows.reduce((s, r) => s + r.value, 0) / Math.max(1, normalRows.length);

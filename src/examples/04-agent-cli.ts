@@ -21,7 +21,9 @@ if (questions.length === 0) {
 function show(e: AgentEvent): void {
   switch (e.type) {
     case "model_call":
-      console.log(`  [model #${e.iteration}] stop_reason=${e.stopReason} ${e.ms.toFixed(0)} ms in/out=${e.inputTokens}/${e.outputTokens}`);
+      console.log(
+        `  [model #${e.iteration}] stop_reason=${e.stopReason} ${e.ms.toFixed(0)} ms in/out=${e.inputTokens}/${e.outputTokens}`,
+      );
       break;
     case "tool_start":
       console.log(`  [tool] ${e.name}(${JSON.stringify(e.input)})`);
@@ -45,13 +47,18 @@ try {
   for (const q of questions) {
     console.log(`\n> ${q}`);
     const r = await runAgent(history, q, {
-      llm, tools: [getLatestReading], ctx, system: SYSTEM_PROMPT,
-      maxTokens: config.maxTokens, maxIterations: config.maxIterations, onEvent: show,
+      llm,
+      tools: [getLatestReading],
+      ctx,
+      system: SYSTEM_PROMPT,
+      maxTokens: config.maxTokens,
+      maxIterations: config.maxIterations,
+      onEvent: show,
     });
     console.log(`\n${r.finalText}`);
     console.log(
       `\n  summary: ${r.iterations} model call(s), ${r.toolCalls} tool call(s), ` +
-      `tokens in/out=${r.inputTokens}/${r.outputTokens}, ${r.totalMs.toFixed(0)} ms, ended: ${r.termination}`,
+        `tokens in/out=${r.inputTokens}/${r.outputTokens}, ${r.totalMs.toFixed(0)} ms, ended: ${r.termination}`,
     );
   }
 } catch (err) {

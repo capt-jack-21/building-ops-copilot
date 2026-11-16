@@ -88,7 +88,13 @@ export async function buildTwin(repo: TelemetryRepository, now: Date): Promise<T
     if (!meter) return null;
     const reading = await repo.getLatest(meter.id);
     if (!reading) return null;
-    return { meterId: meter.id, quantity: meter.quantity, value: Math.round(reading.value * 10) / 10, unit: meter.unit, ts: reading.ts };
+    return {
+      meterId: meter.id,
+      quantity: meter.quantity,
+      value: Math.round(reading.value * 10) / 10,
+      unit: meter.unit,
+      ts: reading.ts,
+    };
   };
 
   const built = await Promise.all(

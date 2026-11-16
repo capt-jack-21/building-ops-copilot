@@ -199,7 +199,12 @@ function toolCard(turn, d) {
   const card = el("details", "tool");
   const summary = el("summary");
   const status = el("span", "tstatus", "running...");
-  summary.append(el("span", "risk " + risk), el("span", "tname", d.name), el("span", "targs", briefArgs(d.input)), status);
+  summary.append(
+    el("span", "risk " + risk),
+    el("span", "tname", d.name),
+    el("span", "targs", briefArgs(d.input)),
+    status,
+  );
   const body = el("div", "tool-body");
   const result = el("pre", "json", "waiting...");
   body.append(el("div", "lbl", "Input"), el("pre", "json", pretty(d.input)), el("div", "lbl", "Result"), result);
@@ -229,7 +234,12 @@ function approvalCard(turn, d) {
   const outcome = el("span", "ap-result", "");
   const actions = el("div", "ap-actions");
   actions.append(approve, decline, timer, outcome);
-  card.append(el("div", "ap-title", "Approval needed: " + d.name), el("div", "ap-reason", d.reason), el("pre", "json", pretty(d.input)), actions);
+  card.append(
+    el("div", "ap-title", "Approval needed: " + d.name),
+    el("div", "ap-reason", d.reason),
+    el("pre", "json", pretty(d.input)),
+    actions,
+  );
 
   const entry = { approve, decline, timer, outcome, settled: false, interval: 0 };
   const deadline = Date.now() + 120000;
@@ -267,7 +277,8 @@ function approvalCard(turn, d) {
   add(turn, card);
 }
 
-async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
+async function handle(turn, ev) {
+  if (window.OpsUi) window.OpsUi.onEvent(ev);
   const d = ev.data;
   switch (ev.event) {
     case "session":
@@ -283,9 +294,14 @@ async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
       t.calls += 1;
       renderStatus();
       const row = el("div", "step");
-      row.append(el("span", "dot"), el("span", "", `Model call ${d.iteration} \u00b7 ${(d.ms / 1000).toFixed(1)}s \u00b7 ${d.stopReason}`));
+      row.append(
+        el("span", "dot"),
+        el("span", "", `Model call ${d.iteration} \u00b7 ${(d.ms / 1000).toFixed(1)}s \u00b7 ${d.stopReason}`),
+      );
       if (d.cacheReadTokens + d.cacheWriteTokens > 0) {
-        row.append(el("span", "chip-cache", `cache ${fmt(d.cacheReadTokens)} read / ${fmt(d.cacheWriteTokens)} written`));
+        row.append(
+          el("span", "chip-cache", `cache ${fmt(d.cacheReadTokens)} read / ${fmt(d.cacheWriteTokens)} written`),
+        );
       }
       add(turn, row);
       break;
@@ -329,7 +345,8 @@ async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
         tool.status.textContent = d.isError ? `error \u00b7 ${d.ms.toFixed(1)} ms` : `${d.ms.toFixed(1)} ms`;
         tool.status.className = "tstatus " + (d.isError ? "err" : "ok");
         tool.result.textContent = pretty(d.content);
-        if (d.isError) tool.card.classList.add("error"); if (window.OpsUi) window.OpsUi.afterToolResult(tool.card, d);
+        if (d.isError) tool.card.classList.add("error");
+        if (window.OpsUi) window.OpsUi.afterToolResult(tool.card, d);
       }
       break;
     }
@@ -346,9 +363,18 @@ async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
       break;
     case "done": {
       const seconds = (d.totalMs / 1000).toFixed(1);
-      add(turn, el("div", "note", `Done \u00b7 ${d.iterations} model calls \u00b7 ${d.toolCalls} tool calls \u00b7 ${seconds}s`));
-      if (d.termination === "max_iterations") add(turn, el("div", "note warn", "Stopped after reaching the step limit."));
-      if (d.termination === "max_tokens") add(turn, el("div", "note warn", "The answer was cut off (output limit reached)."));
+      add(
+        turn,
+        el(
+          "div",
+          "note",
+          `Done \u00b7 ${d.iterations} model calls \u00b7 ${d.toolCalls} tool calls \u00b7 ${seconds}s`,
+        ),
+      );
+      if (d.termination === "max_iterations")
+        add(turn, el("div", "note warn", "Stopped after reaching the step limit."));
+      if (d.termination === "max_tokens")
+        add(turn, el("div", "note warn", "The answer was cut off (output limit reached)."));
       break;
     }
     case "stopped":
@@ -397,7 +423,8 @@ function setRunning(running) {
 async function send(text) {
   setRunning(true);
   addUser(text);
-  const turn = newTurn(); if (window.OpsUi) window.OpsUi.onEvent({ event: "start", data: {} });
+  const turn = newTurn();
+  if (window.OpsUi) window.OpsUi.onEvent({ event: "start", data: {} });
   state.turn = turn;
   const controller = new AbortController();
   state.controller = controller;
@@ -462,13 +489,18 @@ async function send(text) {
   await consumer;
 
   for (const entry of turn.approvals.values()) settleApproval(entry, "Cancelled", "no");
-  turn.thinking.remove(); if (turn.live) { turn.live.classList.remove("live"); turn.live = null; } if (window.OpsUi) window.OpsUi.onEvent({ event: "end", data: {} });
+  turn.thinking.remove();
+  if (turn.live) {
+    turn.live.classList.remove("live");
+    turn.live = null;
+  }
+  if (window.OpsUi) window.OpsUi.onEvent({ event: "end", data: {} });
   state.controller = null;
   setRunning(false);
   input.focus();
 }
 
-function stop() {
+function stopTurn() {
   if (state.turn) state.turn.skip = true;
   if (state.controller) state.controller.abort();
 }
@@ -483,7 +515,7 @@ function autosize() {
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   if (state.running) {
-    stop();
+    stopTurn();
     return;
   }
   const text = input.value.trim();
@@ -507,7 +539,7 @@ for (const chip of document.querySelectorAll(".chip")) {
 }
 
 $("#new-chat").addEventListener("click", () => {
-  stop();
+  stopTurn();
   for (const node of messages.querySelectorAll(".msg")) node.remove();
   welcome.hidden = false;
   state.sessionId = null;
@@ -543,4 +575,3 @@ async function loadMeta() {
 renderStatus();
 loadMeta();
 input.focus();
-

@@ -4,7 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Building Ops Copilot</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2305080c'/%3E%3Cpath d='M8 24V9l8-3 8 3v15z' fill='none' stroke='%2322d3ee' stroke-width='2'/%3E%3C/svg%3E" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2305080c'/%3E%3Cpath d='M8 24V9l8-3 8 3v15z' fill='none' stroke='%2322d3ee' stroke-width='2'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -12,8 +15,18 @@
       <header class="hud-top panel">
         <div class="brand">
           <div class="logo">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 21V8l7-4 7 4v13z" /><path d="M9 21v-5h6v5M9 11h.01M12 11h.01M15 11h.01" stroke-linecap="round" />
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 21V8l7-4 7 4v13z" />
+              <path d="M9 21v-5h6v5M9 11h.01M12 11h.01M15 11h.01" stroke-linecap="round" />
             </svg>
           </div>
           <div>
@@ -33,7 +46,12 @@
         </section>
         <section class="panel pad grow">
           <h2 class="micro">Building twin</h2>
-          <div id="twin" class="twin"><div class="twin-empty">Linking to twin...</div></div><div class="legend"><span><i class="lg-ok"></i>ok</span><span><i class="lg-rec"></i>recovered</span><span><i class="lg-info"></i>info</span><span><i class="lg-warn"></i>warning</span><span><i class="lg-crit"></i>critical</span><span><i class="lg-scan"></i>inspecting</span></div>
+          <div id="twin" class="twin"><div class="twin-empty">Linking to twin...</div></div>
+          <div class="legend">
+            <span><i class="lg-ok"></i>ok</span><span><i class="lg-rec"></i>recovered</span
+            ><span><i class="lg-info"></i>info</span><span><i class="lg-warn"></i>warning</span
+            ><span><i class="lg-crit"></i>critical</span><span><i class="lg-scan"></i>inspecting</span>
+          </div>
         </section>
         <section class="panel pad">
           <h2 class="micro">Tools <span id="tool-count" class="count"></span></h2>
@@ -43,12 +61,19 @@
       </aside>
 
       <main class="center panel">
-        <div id="loop" class="loop" aria-hidden="true"><span class="ln" data-n="you">You</span><i>&rarr;</i><span class="ln" data-n="model">Model</span><i>&rarr;</i><span class="ln" data-n="tools">Tools</span><i>&rarr;</i><span class="ln" data-n="approval">Approval</span><i>&rarr;</i><span class="ln" data-n="answer">Answer</span></div>
+        <div id="loop" class="loop" aria-hidden="true">
+          <span class="ln" data-n="you">You</span><i>&rarr;</i><span class="ln" data-n="model">Model</span><i>&rarr;</i
+          ><span class="ln" data-n="tools">Tools</span><i>&rarr;</i><span class="ln" data-n="approval">Approval</span
+          ><i>&rarr;</i><span class="ln" data-n="answer">Answer</span>
+        </div>
         <section id="messages" class="messages" aria-live="polite">
           <div id="welcome" class="welcome">
             <div class="micro">System ready</div>
             <h1>What do you want to know about your buildings?</h1>
-            <p>Ask about alarms, meters and trends. The copilot calls tools, shows every step, and asks you before it changes anything.</p>
+            <p>
+              Ask about alarms, meters and trends. The copilot calls tools, shows every step, and asks you before it
+              changes anything.
+            </p>
             <div class="chips">
               <button class="chip" type="button">Any active alarms?</button>
               <button class="chip" type="button">Show chiller 2 power for the last 24 hours</button>
@@ -68,25 +93,40 @@
       <aside class="right">
         <section class="panel pad">
           <h2 class="micro">Telemetry</h2>
-          <div class="row" title="Input tokens at the normal price (not cached)"><span class="k">Input</span><span class="v" id="st-in">0</span></div>
-          <div class="row" title="Output tokens generated"><span class="k">Output</span><span class="v" id="st-out">0</span></div>
-          <div class="row" title="Input tokens read from the prompt cache (about 0.1x price)"><span class="k">Cache read</span><span class="v good" id="st-cr">0</span></div>
-          <div class="row" title="Input tokens written to the prompt cache (about 1.25x price)"><span class="k">Cache write</span><span class="v" id="st-cw">0</span></div>
-          <div class="row" title="Cache read divided by total input tokens"><span class="k">Cache hit</span><span class="v good" id="st-hit">0%</span></div>
+          <div class="row" title="Input tokens at the normal price (not cached)">
+            <span class="k">Input</span><span class="v" id="st-in">0</span>
+          </div>
+          <div class="row" title="Output tokens generated">
+            <span class="k">Output</span><span class="v" id="st-out">0</span>
+          </div>
+          <div class="row" title="Input tokens read from the prompt cache (about 0.1x price)">
+            <span class="k">Cache read</span><span class="v good" id="st-cr">0</span>
+          </div>
+          <div class="row" title="Input tokens written to the prompt cache (about 1.25x price)">
+            <span class="k">Cache write</span><span class="v" id="st-cw">0</span>
+          </div>
+          <div class="row" title="Cache read divided by total input tokens">
+            <span class="k">Cache hit</span><span class="v good" id="st-hit">0%</span>
+          </div>
           <div class="gauge" id="gauge"><div class="gauge-fill"></div></div>
           <div class="row"><span class="k">Model calls</span><span class="v" id="st-calls">0</span></div>
           <div class="row"><span class="k">Tool calls</span><span class="v" id="st-tools">0</span></div>
-          <div class="row" title="Session id held by the server"><span class="k">Session</span><span class="v" id="st-sid">-</span></div>
+          <div class="row" title="Session id held by the server">
+            <span class="k">Session</span><span class="v" id="st-sid">-</span>
+          </div>
         </section>
         <section class="panel pad grow">
           <h2 class="micro">Tool log</h2>
-          <ol id="toollog" class="toollog"><li class="empty">No tool calls yet</li></ol>
+          <ol id="toollog" class="toollog">
+            <li class="empty">No tool calls yet</li>
+          </ol>
         </section>
       </aside>
     </div>
     <script src="/charts.js" defer></script>
-    <script src="/hud.js" defer></script><script src="/twin.js" defer></script><script src="/palette.js" defer></script>
+    <script src="/hud.js" defer></script>
+    <script src="/twin.js" defer></script>
+    <script src="/palette.js" defer></script>
     <script src="/app.js" defer></script>
   </body>
 </html>
-

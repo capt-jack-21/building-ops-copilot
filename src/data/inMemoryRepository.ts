@@ -79,4 +79,3 @@ export class InMemoryRepository implements TelemetryRepository {
     return ticket;
   }
 }
-

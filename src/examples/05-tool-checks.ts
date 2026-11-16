@@ -18,7 +18,6 @@ async function call(name: string, input: unknown) {
   const tool = registry.get(name);
   if (!tool) throw new Error(`No such tool: ${name}`);
   const out = await executeTool(tool, input, ctx);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { isError: out.isError, ms: out.ms, data: JSON.parse(out.content) as any };
 }
 
@@ -28,7 +27,14 @@ try {
   const now = Date.now();
   const iso = (ms: number): string => new Date(ms).toISOString();
 
-  check("7 tools registered", registry.size === 7, registry.list().map((t) => t.name).join(", "));
+  check(
+    "7 tools registered",
+    registry.size === 7,
+    registry
+      .list()
+      .map((t) => t.name)
+      .join(", "),
+  );
   check(
     "every tool has an object schema and a real description",
     registry.list().every((t) => t.jsonSchema.type === "object" && t.description.length >= 60),
@@ -49,14 +55,26 @@ try {
 
   const ts = await call("query_timeseries", { meter_id: "m-01-ch2-kw", from: iso(now - 24 * H), to: iso(now) });
   const values: number[] = ts.data.points.map((p: { value: number }) => p.value);
-  check("query_timeseries: hourly buckets for 24h", values.length >= 24 && values.length <= 26, `${values.length} points`);
+  check(
+    "query_timeseries: hourly buckets for 24h",
+    values.length >= 24 && values.length <= 26,
+    `${values.length} points`,
+  );
   check("query_timeseries: the chiller 2 trip is visible", Math.min(...values) < 10, `min ${Math.min(...values)} kW`);
 
   const bad = await call("query_timeseries", { meter_id: "m-01-ch2-kw", from: "yesterday", to: iso(now) });
   check("bad timestamp -> validation error", bad.isError && bad.data.error.category === "validation");
 
-  const big = await call("query_timeseries", { meter_id: "m-01-ch2-kw", from: iso(now - 168 * H), to: iso(now), bucket: "15m" });
-  check("too many buckets -> validation error that suggests a fix", big.isError && /larger bucket/.test(big.data.error.message));
+  const big = await call("query_timeseries", {
+    meter_id: "m-01-ch2-kw",
+    from: iso(now - 168 * H),
+    to: iso(now),
+    bucket: "15m",
+  });
+  check(
+    "too many buckets -> validation error that suggests a fix",
+    big.isError && /larger bucket/.test(big.data.error.message),
+  );
 
   const nf = await call("query_timeseries", { meter_id: "m-99-nope", from: iso(now - H), to: iso(now) });
   check("unknown meter -> not_found", nf.isError && nf.data.error.category === "not_found");
@@ -65,7 +83,11 @@ try {
   check("compare_to_baseline flags chiller 2 temperature", c2.data.flagged === true, `${c2.data.deviation_pct}%`);
 
   const c1 = await call("compare_to_baseline", { meter_id: "m-01-ch1-temp", hours: 24 });
-  check("compare_to_baseline does not flag chiller 1 temperature", c1.data.flagged === false, `${c1.data.deviation_pct}%`);
+  check(
+    "compare_to_baseline does not flag chiller 1 temperature",
+    c1.data.flagged === false,
+    `${c1.data.deviation_pct}%`,
+  );
 
   const active = await call("list_alarms", { active_only: true });
   check("list_alarms active_only -> 2", active.data.count === 2, `${active.data.count}`);
@@ -73,11 +95,19 @@ try {
   const crit = await call("list_alarms", { severity: "critical" });
   check("list_alarms critical -> 1", crit.data.count === 1 && crit.data.alarms[0].code === "CH2_TRIP");
 
-  const t = await call("create_ticket", { title: "Chiller 2 trip", description: "Tripped overnight", priority: "high", asset_id: "a-01-chiller-2" });
+  const t = await call("create_ticket", {
+    title: "Chiller 2 trip",
+    description: "Tripped overnight",
+    priority: "high",
+    asset_id: "a-01-chiller-2",
+  });
   check("create_ticket returns T-0001", !t.isError && t.data.ticket_id === "T-0001");
 
   const tBad = await call("create_ticket", { title: "x", description: "d", priority: "urgent" });
-  check("create_ticket rejects a bad priority and short title", tBad.isError && tBad.data.error.category === "validation");
+  check(
+    "create_ticket rejects a bad priority and short title",
+    tBad.isError && tBad.data.error.category === "validation",
+  );
 
   console.log(`\nTotal time: ${(performance.now() - t0).toFixed(1)} ms`);
   console.log(failures === 0 ? "ALL CHECKS PASSED" : `${failures} CHECK(S) FAILED`);

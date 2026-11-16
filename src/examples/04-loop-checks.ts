@@ -17,7 +17,12 @@ class ScriptedLlm implements LlmClient {
 }
 
 const usage = { inputTokens: 10, outputTokens: 5 };
-const use = (id: string, input: unknown, name = "get_latest_reading") => ({ type: "tool_use" as const, id, name, input });
+const use = (id: string, input: unknown, name = "get_latest_reading") => ({
+  type: "tool_use" as const,
+  id,
+  name,
+  input,
+});
 const say = (text: string): LlmResponse => ({ content: [{ type: "text", text }], stopReason: "end_turn", usage });
 const asks = (...blocks: ReturnType<typeof use>[]): LlmResponse => ({ content: blocks, stopReason: "tool_use", usage });
 
@@ -39,8 +44,14 @@ try {
     const history: Message[] = [];
     const llm = new ScriptedLlm([asks(use("t1", { meter_id: "m-01-main-kw" })), say("Done.")]);
     const r = await runAgent(history, "q", { ...base, llm });
-    check("one tool round trip: 2 iterations, 1 tool call", r.iterations === 2 && r.toolCalls === 1 && r.termination === "end_turn");
-    check("history is user, assistant, user(tool_result), assistant", history.map((m) => m.role).join(",") === "user,assistant,user,assistant");
+    check(
+      "one tool round trip: 2 iterations, 1 tool call",
+      r.iterations === 2 && r.toolCalls === 1 && r.termination === "end_turn",
+    );
+    check(
+      "history is user, assistant, user(tool_result), assistant",
+      history.map((m) => m.role).join(",") === "user,assistant,user,assistant",
+    );
     check("tool_result id matches tool_use id", resultIds(history[2]).join() === "t1");
     check("final text returned", r.finalText === "Done.");
   }
@@ -64,14 +75,21 @@ try {
     const r = await runAgent(history, "q", { ...base, llm });
     const m = history[2];
     const flags = m && m.role === "user" && typeof m.content !== "string" ? m.content.map((b) => b.is_error) : [];
-    check("errors become is_error results and the loop continues", flags.join() === "true,true" && r.termination === "end_turn");
+    check(
+      "errors become is_error results and the loop continues",
+      flags.join() === "true,true" && r.termination === "end_turn",
+    );
   }
 
   {
     const history: Message[] = [];
     const llm = new ScriptedLlm(Array.from({ length: 10 }, (_, i) => asks(use(`l${i}`, { meter_id: "m-01-main-kw" }))));
     const r = await runAgent(history, "q", { ...base, llm, maxIterations: 3 });
-    check("iteration cap stops a runaway loop", r.termination === "max_iterations" && llm.calls === 3, `${llm.calls} model calls`);
+    check(
+      "iteration cap stops a runaway loop",
+      r.termination === "max_iterations" && llm.calls === 3,
+      `${llm.calls} model calls`,
+    );
   }
 
   {
@@ -84,7 +102,10 @@ try {
     };
     const r = await runAgent(history, "q", { ...base, llm: new ScriptedLlm([cut]), onEvent: (e) => events.push(e) });
     check("truncated tool_use is dropped from history", history.length === 1 && r.termination === "max_tokens");
-    check("a warning event was emitted", events.some((e) => e.type === "warning"));
+    check(
+      "a warning event was emitted",
+      events.some((e) => e.type === "warning"),
+    );
   }
 
   {
@@ -92,7 +113,10 @@ try {
     const llm = new ScriptedLlm([say("First."), say("Second.")]);
     await runAgent(history, "q1", { ...base, llm });
     await runAgent(history, "q2", { ...base, llm });
-    check("same history array continues the conversation", history.map((m) => m.role).join(",") === "user,assistant,user,assistant");
+    check(
+      "same history array continues the conversation",
+      history.map((m) => m.role).join(",") === "user,assistant,user,assistant",
+    );
   }
 
   console.log(`\nTotal time: ${(performance.now() - t0).toFixed(1)} ms`);

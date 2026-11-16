@@ -28,13 +28,27 @@ function plan(text: string): AssistantBlock[] | undefined {
       }),
     ];
   }
-  if (/trend|chart|plot|power|24 h/.test(t)) return [use("query_timeseries", { meter_id: "m-01-ch2-kw", from: new Date(Date.now() - 24 * 3600_000).toISOString(), to: new Date().toISOString(), bucket: "1h" })];
+  if (/trend|chart|plot|power|24 h/.test(t))
+    return [
+      use("query_timeseries", {
+        meter_id: "m-01-ch2-kw",
+        from: new Date(Date.now() - 24 * 3600_000).toISOString(),
+        to: new Date().toISOString(),
+        bucket: "1h",
+      }),
+    ];
   if (t.includes("alarm")) return [use("list_alarms", { active_only: true })];
   if (t.includes("chiller") || t.includes("trip")) {
-    return [use("list_alarms", { building_id: "bld-01", severity: "critical" }), use("get_latest_reading", { meter_id: "m-01-ch2-kw" })];
+    return [
+      use("list_alarms", { building_id: "bld-01", severity: "critical" }),
+      use("get_latest_reading", { meter_id: "m-01-ch2-kw" }),
+    ];
   }
   if (t.includes("fuel") || t.includes("generator")) {
-    return [use("get_latest_reading", { meter_id: "m-02-fuel-pct" }), use("list_alarms", { building_id: "bld-02", active_only: true })];
+    return [
+      use("get_latest_reading", { meter_id: "m-02-fuel-pct" }),
+      use("list_alarms", { building_id: "bld-02", active_only: true }),
+    ];
   }
   if (t.includes("building")) return [use("list_buildings", {})];
   return undefined;
@@ -52,7 +66,9 @@ function describe(block: ToolResultBlock): string[] {
     return [`Tool error (${e?.category ?? "unknown"}): ${e?.message ?? "no message"}`];
   }
   if (Array.isArray(data)) {
-    return data.map((b: { building_id?: string; name?: string; city?: string }) => `Building ${b.building_id}: ${b.name} (${b.city})`);
+    return data.map(
+      (b: { building_id?: string; name?: string; city?: string }) => `Building ${b.building_id}: ${b.name} (${b.city})`,
+    );
   }
   const d = data as Record<string, unknown>;
   if (Array.isArray(d["alarms"])) {
@@ -105,4 +121,3 @@ export class DemoLlmClient implements LlmClient {
     throw new Error("The demo client cannot continue from this conversation state.");
   }
 }
-

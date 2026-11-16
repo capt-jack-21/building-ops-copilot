@@ -67,13 +67,21 @@ export function createApp(deps: AppDeps): express.Express {
   if (deps.logRequests ?? true) {
     app.use("/api", (req, res, next) => {
       const t0 = performance.now();
-      res.on("finish", () => console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${(performance.now() - t0).toFixed(0)} ms`));
+      res.on("finish", () =>
+        console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${(performance.now() - t0).toFixed(0)} ms`),
+      );
       next();
     });
   }
 
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", model: deps.model, demo: deps.demo, tools: deps.registry.size, uptime_s: Math.round(process.uptime()) });
+    res.json({
+      status: "ok",
+      model: deps.model,
+      demo: deps.demo,
+      tools: deps.registry.size,
+      uptime_s: Math.round(process.uptime()),
+    });
   });
 
   app.get("/api/twin", async (_req, res) => {
@@ -184,13 +192,12 @@ export function createApp(deps: AppDeps): express.Express {
       res.end();
       return;
     }
-    res.status(status).json(
-      status < 500 ? apiError("bad_request", "Invalid request.") : apiError("server_error", "Internal server error."),
-    );
+    res
+      .status(status)
+      .json(
+        status < 500 ? apiError("bad_request", "Invalid request.") : apiError("server_error", "Internal server error."),
+      );
   });
 
   return app;
 }
-
-
-

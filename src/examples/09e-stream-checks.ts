@@ -36,7 +36,12 @@ const server = app.listen(0, "127.0.0.1");
 await new Promise<void>((resolve) => server.once("listening", () => resolve()));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 const chat = (message: string, signal?: AbortSignal): Promise<Response> =>
-  fetch(`${base}/api/chat`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message }), ...(signal ? { signal } : {}) });
+  fetch(`${base}/api/chat`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message }),
+    ...(signal ? { signal } : {}),
+  });
 
 try {
   const events: Array<{ event: string; data: any }> = [];
@@ -47,9 +52,19 @@ try {
   const firstDelta = events.findIndex((e) => e.event === "text_delta");
   const finalIndex = events.findIndex((e) => e.event === "text");
 
-  check("text arrives as several deltas before the final text event", deltas.length >= 3 && firstDelta >= 0 && firstDelta < finalIndex, `${deltas.length} deltas`);
-  check("the deltas add up to the final text", finalText.length > 0 && deltas.map((e) => e.data.text).join("") === finalText);
-  check("every delta names its model call", deltas.every((e) => typeof e.data.iteration === "number"));
+  check(
+    "text arrives as several deltas before the final text event",
+    deltas.length >= 3 && firstDelta >= 0 && firstDelta < finalIndex,
+    `${deltas.length} deltas`,
+  );
+  check(
+    "the deltas add up to the final text",
+    finalText.length > 0 && deltas.map((e) => e.data.text).join("") === finalText,
+  );
+  check(
+    "every delta names its model call",
+    deltas.every((e) => typeof e.data.iteration === "number"),
+  );
   check("the turn still ends with done", events.at(-1)?.event === "done");
 
   const controller = new AbortController();

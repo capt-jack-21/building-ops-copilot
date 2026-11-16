@@ -34,27 +34,63 @@ const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
 // Every element id the front-end JavaScript looks up. A missing id means a broken UI.
 const REQUIRED_IDS = [
-  "new-chat", "tool-count", "tool-list", "mode-badge", "messages", "welcome", "composer", "input", "send",
-  "st-in", "st-out", "st-cr", "st-cw", "st-hit", "st-calls", "st-tools", "st-sid", "loop", "clock", "gauge", "toollog", "twin",
+  "new-chat",
+  "tool-count",
+  "tool-list",
+  "mode-badge",
+  "messages",
+  "welcome",
+  "composer",
+  "input",
+  "send",
+  "st-in",
+  "st-out",
+  "st-cr",
+  "st-cw",
+  "st-hit",
+  "st-calls",
+  "st-tools",
+  "st-sid",
+  "loop",
+  "clock",
+  "gauge",
+  "toollog",
+  "twin",
 ];
 
 try {
   const page = await fetch(`${base}/`);
   const html = await page.text();
-  check("GET / serves the HTML page", page.status === 200 && (page.headers.get("content-type") ?? "").includes("text/html") && html.includes("Building Ops Copilot"));
+  check(
+    "GET / serves the HTML page",
+    page.status === 200 &&
+      (page.headers.get("content-type") ?? "").includes("text/html") &&
+      html.includes("Building Ops Copilot"),
+  );
   check("page links the stylesheet", html.includes('href="/styles.css"'));
 
   const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
-  check("no inline scripts (CSP-safe)", scriptTags.length > 0 && scriptTags.every((tag) => /\ssrc=/.test(tag)), `${scriptTags.length} script tag(s)`);
+  check(
+    "no inline scripts (CSP-safe)",
+    scriptTags.length > 0 && scriptTags.every((tag) => /\ssrc=/.test(tag)),
+    `${scriptTags.length} script tag(s)`,
+  );
 
   const csp = page.headers.get("content-security-policy") ?? "";
-  check("CSP restricts scripts to same origin", csp.includes("script-src 'self'") && csp.includes("script-src-attr 'none'"));
+  check(
+    "CSP restricts scripts to same origin",
+    csp.includes("script-src 'self'") && csp.includes("script-src-attr 'none'"),
+  );
 
   const css = await fetch(`${base}/styles.css`);
   check("GET /styles.css", css.status === 200 && (css.headers.get("content-type") ?? "").includes("text/css"));
 
   const missing = REQUIRED_IDS.filter((id) => !html.includes(`id="${id}"`));
-  check("all element ids used by the JS exist in the HTML", missing.length === 0, missing.length ? "missing: " + missing.join(", ") : `${REQUIRED_IDS.length} ids`);
+  check(
+    "all element ids used by the JS exist in the HTML",
+    missing.length === 0,
+    missing.length ? "missing: " + missing.join(", ") : `${REQUIRED_IDS.length} ids`,
+  );
 
   const scripts = [...html.matchAll(/<script\b[^>]*\ssrc="([^"]+)"/gi)].map((m) => m[1] ?? "");
   for (const src of scripts) {
@@ -68,7 +104,10 @@ try {
       console.log("  syntax error:", err instanceof Error ? err.message : err);
     }
     const safe = !/innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/.test(source);
-    check(`script ${src}: served, valid syntax, no unsafe DOM APIs`, res.status === 200 && (res.headers.get("content-type") ?? "").includes("javascript") && syntaxOk && safe);
+    check(
+      `script ${src}: served, valid syntax, no unsafe DOM APIs`,
+      res.status === 200 && (res.headers.get("content-type") ?? "").includes("javascript") && syntaxOk && safe,
+    );
   }
 
   console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
@@ -80,4 +119,3 @@ try {
   server.closeAllConnections();
   server.close();
 }
-

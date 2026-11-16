@@ -41,7 +41,11 @@
       const d0 = new Date();
       const li = document.createElement("li");
       const status = span("s wait", "running");
-      li.append(span("t", `${pad(d0.getUTCHours())}:${pad(d0.getUTCMinutes())}:${pad(d0.getUTCSeconds())}`), span("n", d.name), status);
+      li.append(
+        span("t", `${pad(d0.getUTCHours())}:${pad(d0.getUTCMinutes())}:${pad(d0.getUTCSeconds())}`),
+        span("n", d.name),
+        status,
+      );
       rows.set(d.id, status);
       log.prepend(li);
       while (log.children.length > MAX_ROWS) log.lastElementChild.remove();

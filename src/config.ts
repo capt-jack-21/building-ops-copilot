@@ -22,7 +22,8 @@ export const config = {
   model: env.ANTHROPIC_MODEL,
   apiKey: env.ANTHROPIC_API_KEY,
   /** Demo mode: explicit DEMO_MODE=1, or no API key and no explicit setting. */
-  demoMode: env.DEMO_MODE === "1" || env.DEMO_MODE === "true" || (env.DEMO_MODE === undefined && !env.ANTHROPIC_API_KEY),
+  demoMode:
+    env.DEMO_MODE === "1" || env.DEMO_MODE === "true" || (env.DEMO_MODE === undefined && !env.ANTHROPIC_API_KEY),
   port: env.PORT,
   host: env.BIND_HOST,
   maxIterations: 10,

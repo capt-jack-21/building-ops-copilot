@@ -17,7 +17,9 @@ import { CliApprovalBroker } from "../approvals/cliBroker.js";
 function show(e: AgentEvent): void {
   switch (e.type) {
     case "model_call":
-      console.log(`  [model #${e.iteration}] ${e.stopReason} ${e.ms.toFixed(0)} ms in/out=${e.inputTokens}/${e.outputTokens}`);
+      console.log(
+        `  [model #${e.iteration}] ${e.stopReason} ${e.ms.toFixed(0)} ms in/out=${e.inputTokens}/${e.outputTokens}`,
+      );
       break;
     case "tool_start":
       console.log(`  [tool] ${e.name}(${JSON.stringify(e.input)})`);
@@ -67,8 +69,15 @@ try {
     const before = history.length;
     try {
       const r = await runAgent(history, line, {
-        llm, tools: registry.list(), ctx, system: SYSTEM_PROMPT, policy, approvals,
-        maxTokens: config.maxTokens, maxIterations: config.maxIterations, onEvent: show,
+        llm,
+        tools: registry.list(),
+        ctx,
+        system: SYSTEM_PROMPT,
+        policy,
+        approvals,
+        maxTokens: config.maxTokens,
+        maxIterations: config.maxIterations,
+        onEvent: show,
       });
       console.log(`\n${r.finalText}\n`);
       console.log(

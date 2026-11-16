@@ -55,7 +55,14 @@ async function scenario(script: LlmResponse[], broker?: ApprovalBroker) {
   const ctx: ToolContext = { repo: new InMemoryRepository(generateSeed()), now: () => new Date() };
   const history: Message[] = [];
   const events: AgentEvent[] = [];
-  const opts = { llm: new ScriptedLlm(script), tools: registry.list(), ctx, system: "t", policy, onEvent: (e: AgentEvent) => events.push(e) };
+  const opts = {
+    llm: new ScriptedLlm(script),
+    tools: registry.list(),
+    ctx,
+    system: "t",
+    policy,
+    onEvent: (e: AgentEvent) => events.push(e),
+  };
   const result = await runAgent(history, "q", broker ? { ...opts, approvals: broker } : opts);
   return { ctx, history, events, result };
 }
@@ -73,16 +80,31 @@ try {
   const low = policy.evaluate(tool("create_ticket"), { priority: "low" });
   check("policy: every write needs approval (fail-safe default)", low.action === "require_approval");
   const crit = policy.evaluate(tool("create_ticket"), { priority: "critical" });
-  check("policy: critical ticket gets the stronger reason", crit.action === "require_approval" && /Critical/.test(crit.reason));
+  check(
+    "policy: critical ticket gets the stronger reason",
+    crit.action === "require_approval" && /Critical/.test(crit.reason),
+  );
 
   {
     const broker = new CountingBroker({ approved: true });
     const { history, events, result } = await scenario([asks(ticket("t1", "critical")), say("Raised.")], broker);
     const block = lastResults(history)[0];
     const data = block ? JSON.parse(block.content) : {};
-    check("approved: the ticket is created", !block?.is_error && data.ticket_id === "T-0001" && result.termination === "end_turn");
-    check("approved: the human saw the exact input that ran", broker.requests[0]?.toolName === "create_ticket" && (broker.requests[0]?.input as { priority?: string }).priority === "critical" && data.priority === "critical");
-    check("approval events were emitted", events.some((e) => e.type === "approval_required") && events.some((e) => e.type === "approval_result" && e.approved));
+    check(
+      "approved: the ticket is created",
+      !block?.is_error && data.ticket_id === "T-0001" && result.termination === "end_turn",
+    );
+    check(
+      "approved: the human saw the exact input that ran",
+      broker.requests[0]?.toolName === "create_ticket" &&
+        (broker.requests[0]?.input as { priority?: string }).priority === "critical" &&
+        data.priority === "critical",
+    );
+    check(
+      "approval events were emitted",
+      events.some((e) => e.type === "approval_required") &&
+        events.some((e) => e.type === "approval_result" && e.approved),
+    );
   }
 
   {
@@ -90,7 +112,10 @@ try {
     const { ctx, history } = await scenario([asks(ticket("t1", "high")), say("Understood.")], broker);
     const block = lastResults(history)[0];
     const data = block ? JSON.parse(block.content) : {};
-    check("declined: permission error returned to the model", block?.is_error === true && data.error?.category === "permission");
+    check(
+      "declined: permission error returned to the model",
+      block?.is_error === true && data.error?.category === "permission",
+    );
     const probe = await ctx.repo.createTicket({ title: "probe", description: "p", priority: "low" });
     check("declined: nothing was created", probe.id === "T-0001", probe.id);
   }
@@ -99,7 +124,10 @@ try {
     const { history } = await scenario([asks(ticket("t1", "high")), say("Cannot.")]);
     const block = lastResults(history)[0];
     const data = block ? JSON.parse(block.content) : {};
-    check("no approver available: fails closed", block?.is_error === true && /no approver/.test(data.error?.message ?? ""));
+    check(
+      "no approver available: fails closed",
+      block?.is_error === true && /no approver/.test(data.error?.message ?? ""),
+    );
   }
 
   {
@@ -107,7 +135,10 @@ try {
     const { history } = await scenario([asks(ticket("t1", "urgent")), say("Fixing.")], broker);
     const block = lastResults(history)[0];
     const data = block ? JSON.parse(block.content) : {};
-    check("invalid input: validation error and the human is NOT asked", broker.requests.length === 0 && data.error?.category === "validation");
+    check(
+      "invalid input: validation error and the human is NOT asked",
+      broker.requests.length === 0 && data.error?.category === "validation",
+    );
   }
 
   {

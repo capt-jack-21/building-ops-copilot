@@ -49,9 +49,18 @@ const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
 const JSON_HEADERS = { "content-type": "application/json" };
 const chat = (body: unknown, signal?: AbortSignal): Promise<Response> =>
-  fetch(`${base}/api/chat`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(body), ...(signal ? { signal } : {}) });
+  fetch(`${base}/api/chat`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(body),
+    ...(signal ? { signal } : {}),
+  });
 const approve = (sessionId: string, id: string, approved: boolean): Promise<Response> =>
-  fetch(`${base}/api/approvals/${id}`, { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ session_id: sessionId, approved }) });
+  fetch(`${base}/api/approvals/${id}`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ session_id: sessionId, approved }),
+  });
 
 async function drain(res: Response, onEvent?: (e: SseEvent) => Promise<void>): Promise<SseEvent[]> {
   const events: SseEvent[] = [];
@@ -66,18 +75,32 @@ try {
   const t0 = performance.now();
 
   const health = await (await fetch(`${base}/api/health`)).json();
-  check("GET /api/health", health.status === "ok" && health.demo === true && health.tools === 7, JSON.stringify(health));
+  check(
+    "GET /api/health",
+    health.status === "ok" && health.demo === true && health.tools === 7,
+    JSON.stringify(health),
+  );
 
   const tools = await (await fetch(`${base}/api/tools`)).json();
-  check("GET /api/tools lists 7 tools with risk levels", tools.length === 7 && tools.some((t: { name: string; risk: string }) => t.name === "create_ticket" && t.risk === "write"));
+  check(
+    "GET /api/tools lists 7 tools with risk levels",
+    tools.length === 7 &&
+      tools.some((t: { name: string; risk: string }) => t.name === "create_ticket" && t.risk === "write"),
+  );
 
   const hdr = await fetch(`${base}/api/health`);
-  check("security headers set, x-powered-by hidden", hdr.headers.get("x-content-type-options") === "nosniff" && hdr.headers.get("x-powered-by") === null);
+  check(
+    "security headers set, x-powered-by hidden",
+    hdr.headers.get("x-content-type-options") === "nosniff" && hdr.headers.get("x-powered-by") === null,
+  );
 
   check("empty message -> 400", (await chat({ message: "   " })).status === 400);
   check("oversized message -> 400", (await chat({ message: "x".repeat(2001) })).status === 400);
   const bad = await fetch(`${base}/api/chat`, { method: "POST", headers: JSON_HEADERS, body: "{not json" });
-  check("malformed JSON -> 400 (no stack trace leaked)", bad.status === 400 && !(await bad.text()).includes("SyntaxError"));
+  check(
+    "malformed JSON -> 400 (no stack trace leaked)",
+    bad.status === 400 && !(await bad.text()).includes("SyntaxError"),
+  );
 
   let sid = "";
   {
@@ -86,15 +109,22 @@ try {
     const names = events.map((e) => e.event);
     sid = events[0]?.data.session_id ?? "";
     const text = events.find((e) => e.event === "text")?.data.text ?? "";
-    check("chat streams session, tool_start, tool_result, text, done in order",
-      names[0] === "session" && names.indexOf("tool_start") < names.indexOf("tool_result") && names.indexOf("text") < names.indexOf("done"),
-      names.join(">"));
+    check(
+      "chat streams session, tool_start, tool_result, text, done in order",
+      names[0] === "session" &&
+        names.indexOf("tool_start") < names.indexOf("tool_result") &&
+        names.indexOf("text") < names.indexOf("done"),
+      names.join(">"),
+    );
     check("the answer contains real tool data", text.includes("GEN1_FUEL_LOW"));
   }
 
   {
     const events = await drain(await chat({ session_id: sid, message: "List the buildings" }));
-    check("same session_id continues the conversation", events[0]?.data.session_id === sid && events.at(-1)?.event === "done");
+    check(
+      "same session_id continues the conversation",
+      events[0]?.data.session_id === sid && events.at(-1)?.event === "done",
+    );
   }
 
   {
@@ -110,7 +140,13 @@ try {
     });
     const result = events.find((e) => e.event === "tool_result");
     const data = result ? JSON.parse(result.data.content) : {};
-    check("approval over HTTP: approve -> ticket created", status === 200 && result?.data.isError === false && data.ticket_id === "T-0001" && events.at(-1)?.event === "done");
+    check(
+      "approval over HTTP: approve -> ticket created",
+      status === 200 &&
+        result?.data.isError === false &&
+        data.ticket_id === "T-0001" &&
+        events.at(-1)?.event === "done",
+    );
   }
 
   {
@@ -120,7 +156,10 @@ try {
       if (e.event === "approval_required") await approve(sessionId, e.data.id, false);
     });
     const result = events.find((e) => e.event === "tool_result");
-    check("approval over HTTP: decline -> permission error, nothing created", result?.data.isError === true && /permission/.test(result.data.content));
+    check(
+      "approval over HTTP: decline -> permission error, nothing created",
+      result?.data.isError === true && /permission/.test(result.data.content),
+    );
   }
 
   {

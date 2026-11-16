@@ -30,10 +30,16 @@ try {
   // Call 1: Claude decides whether it needs a tool.
   let t0 = performance.now();
   const first = await client.messages.create({
-    model: MODEL, max_tokens: 1024, system: SYSTEM, tools: toolDefs, messages,
+    model: MODEL,
+    max_tokens: 1024,
+    system: SYSTEM,
+    tools: toolDefs,
+    messages,
   });
-  console.log(`Call 1: stop_reason=${first.stop_reason}, ${(performance.now() - t0).toFixed(0)} ms, ` +
-    `tokens in/out=${first.usage.input_tokens}/${first.usage.output_tokens}`);
+  console.log(
+    `Call 1: stop_reason=${first.stop_reason}, ${(performance.now() - t0).toFixed(0)} ms, ` +
+      `tokens in/out=${first.usage.input_tokens}/${first.usage.output_tokens}`,
+  );
 
   if (first.stop_reason !== "tool_use") {
     for (const b of first.content) if (b.type === "text") console.log(b.text);
@@ -48,7 +54,13 @@ try {
     const tool = tools.find((t) => t.name === block.name);
     const outcome = tool
       ? await executeTool(tool, block.input, ctx)
-      : { isError: true, ms: 0, content: JSON.stringify({ error: { category: "not_found", retryable: false, message: `Unknown tool ${block.name}` } }) };
+      : {
+          isError: true,
+          ms: 0,
+          content: JSON.stringify({
+            error: { category: "not_found", retryable: false, message: `Unknown tool ${block.name}` },
+          }),
+        };
     console.log(`  -> ${outcome.isError ? "ERROR" : "ok"} in ${outcome.ms.toFixed(1)} ms: ${outcome.content}`);
     results.push({ type: "tool_result", tool_use_id: block.id, content: outcome.content, is_error: outcome.isError });
   }
@@ -59,10 +71,16 @@ try {
 
   t0 = performance.now();
   const second = await client.messages.create({
-    model: MODEL, max_tokens: 1024, system: SYSTEM, tools: toolDefs, messages,
+    model: MODEL,
+    max_tokens: 1024,
+    system: SYSTEM,
+    tools: toolDefs,
+    messages,
   });
-  console.log(`\nCall 2: stop_reason=${second.stop_reason}, ${(performance.now() - t0).toFixed(0)} ms, ` +
-    `tokens in/out=${second.usage.input_tokens}/${second.usage.output_tokens}\n`);
+  console.log(
+    `\nCall 2: stop_reason=${second.stop_reason}, ${(performance.now() - t0).toFixed(0)} ms, ` +
+      `tokens in/out=${second.usage.input_tokens}/${second.usage.output_tokens}\n`,
+  );
   for (const b of second.content) if (b.type === "text") console.log(b.text);
 } catch (err) {
   if (err instanceof Anthropic.APIError) {

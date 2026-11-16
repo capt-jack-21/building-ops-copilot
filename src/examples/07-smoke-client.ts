@@ -25,7 +25,9 @@ try {
         console.log(`session ${sessionId}`);
         break;
       case "model_call":
-        console.log(`  [model #${e.data.iteration}] ${e.data.stopReason} ${e.data.ms.toFixed(0)} ms in/out=${e.data.inputTokens}/${e.data.outputTokens} cache read/write=${e.data.cacheReadTokens}/${e.data.cacheWriteTokens}`);
+        console.log(
+          `  [model #${e.data.iteration}] ${e.data.stopReason} ${e.data.ms.toFixed(0)} ms in/out=${e.data.inputTokens}/${e.data.outputTokens} cache read/write=${e.data.cacheReadTokens}/${e.data.cacheWriteTokens}`,
+        );
         break;
       case "tool_start":
         console.log(`  [tool] ${e.data.name}(${JSON.stringify(e.data.input)})`);
@@ -51,7 +53,9 @@ try {
         console.log(`\n${e.data.text}\n`);
         break;
       case "done":
-        console.log(`done: ${e.data.iterations} model call(s), ${e.data.toolCalls} tool call(s), ${e.data.totalMs.toFixed(0)} ms, ended: ${e.data.termination}`);
+        console.log(
+          `done: ${e.data.iterations} model call(s), ${e.data.toolCalls} tool call(s), ${e.data.totalMs.toFixed(0)} ms, ended: ${e.data.termination}`,
+        );
         break;
       case "error":
         console.error("server error:", e.data.message);

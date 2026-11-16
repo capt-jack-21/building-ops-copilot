@@ -31,7 +31,10 @@ function toSdkMessages(messages: Message[]): Anthropic.MessageParam[] {
 export class AnthropicLlmClient implements LlmClient {
   private readonly client: Anthropic;
 
-  constructor(private readonly model: string, client?: Anthropic) {
+  constructor(
+    private readonly model: string,
+    client?: Anthropic,
+  ) {
     // The SDK retries 429 / 5xx / connection errors with backoff; we raise it from 2 to 3.
     this.client = client ?? new Anthropic({ maxRetries: 3 });
   }
