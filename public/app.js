@@ -50,7 +50,7 @@ function splitRow(line) {
     .map((c) => c.trim());
 }
 
-/** Build a <table> from pipe-delimited lines (header, separator, rows). Cells go through inline(), never innerHTML. */
+/** Build a <table> from pipe-delimited lines (header, separator, rows). Cells go through inline(), built from DOM nodes only. */
 function renderTable(container, rows) {
   const isSep = (r) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(r);
   const hasHead = rows.length > 1 && isSep(rows[1]);
