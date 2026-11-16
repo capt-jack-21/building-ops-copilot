@@ -1,0 +1,110 @@
+﻿import { executeTool } from "../tools/types.js";
+import type { Tool, ToolContext, ToolOutcome } from "../tools/types.js";
+import type { LlmClient, Message, ToolResultBlock, ToolUseBlock } from "./llm.js";
+
+export type AgentEvent =
+  | { type: "model_call"; iteration: number; stopReason: string | null; ms: number; inputTokens: number; outputTokens: number }
+  | { type: "text"; text: string }
+  | { type: "tool_start"; id: string; name: string; input: unknown }
+  | { type: "tool_result"; id: string; name: string; isError: boolean; ms: number; content: string }
+  | { type: "warning"; message: string };
+
+export type Termination = "end_turn" | "max_iterations" | "max_tokens" | "other";
+
+export interface AgentOptions {
+  llm: LlmClient;
+  tools: Tool[];
+  ctx: ToolContext;
+  system: string;
+  maxTokens?: number;
+  maxIterations?: number;
+  onEvent?: (event: AgentEvent) => void;
+}
+
+export interface AgentResult {
+  finalText: string;
+  termination: Termination;
+  stopReason: string | null;
+  iterations: number;
+  toolCalls: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalMs: number;
+}
+
+function unknownTool(name: string): ToolOutcome {
+  return {
+    isError: true,
+    ms: 0,
+    content: JSON.stringify({ error: { category: "not_found", retryable: false, message: `Unknown tool "${name}".` } }),
+  };
+}
+
+/**
+ * Run one user turn to completion. `history` is mutated: the user message, every
+ * assistant turn and every tool_result turn are appended, so passing the same
+ * array again continues the conversation.
+ */
+export async function runAgent(history: Message[], userText: string, opts: AgentOptions): Promise<AgentResult> {
+  const { llm, tools, ctx, system, onEvent = () => undefined, maxTokens = 1024, maxIterations = 10 } = opts;
+  const started = performance.now();
+  const toolDefs = tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.jsonSchema }));
+  const stats = { toolCalls: 0, inputTokens: 0, outputTokens: 0 };
+  let lastText = "";
+
+  const finish = (termination: Termination, stopReason: string | null, iterations: number): AgentResult => ({
+    finalText: lastText,
+    termination,
+    stopReason,
+    iterations,
+    toolCalls: stats.toolCalls,
+    inputTokens: stats.inputTokens,
+    outputTokens: stats.outputTokens,
+    totalMs: performance.now() - started,
+  });
+
+  history.push({ role: "user", content: userText });
+
+  for (let iteration = 1; iteration <= maxIterations; iteration++) {
+    const t0 = performance.now();
+    const res = await llm.complete({ system, tools: toolDefs, messages: history, maxTokens });
+    stats.inputTokens += res.usage.inputTokens;
+    stats.outputTokens += res.usage.outputTokens;
+    onEvent({
+      type: "model_call", iteration, stopReason: res.stopReason, ms: performance.now() - t0,
+      inputTokens: res.usage.inputTokens, outputTokens: res.usage.outputTokens,
+    });
+
+    const uses = res.content.filter((b): b is ToolUseBlock => b.type === "tool_use");
+    lastText = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+    if (lastText) onEvent({ type: "text", text: lastText });
+
+    // A tool_use that was cut off by max_tokens (or any non-tool_use stop) can never be answered,
+    // and a dangling tool_use would break the next API call. Drop that turn.
+    if (res.stopReason !== "tool_use") {
+      if (uses.length > 0) onEvent({ type: "warning", message: "Dropped an incomplete tool request (response was cut off)." });
+      else history.push({ role: "assistant", content: res.content });
+      const termination: Termination =
+        res.stopReason === "end_turn" ? "end_turn" : res.stopReason === "max_tokens" ? "max_tokens" : "other";
+      return finish(termination, res.stopReason, iteration);
+    }
+
+    history.push({ role: "assistant", content: res.content });
+
+    // Run every requested tool, then answer them all in ONE user message.
+    const results: ToolResultBlock[] = await Promise.all(
+      uses.map(async (use) => {
+        onEvent({ type: "tool_start", id: use.id, name: use.name, input: use.input });
+        const tool = tools.find((t) => t.name === use.name);
+        const outcome = tool ? await executeTool(tool, use.input, ctx) : unknownTool(use.name);
+        stats.toolCalls++;
+        onEvent({ type: "tool_result", id: use.id, name: use.name, isError: outcome.isError, ms: outcome.ms, content: outcome.content });
+        return { type: "tool_result" as const, tool_use_id: use.id, content: outcome.content, is_error: outcome.isError };
+      }),
+    );
+    history.push({ role: "user", content: results });
+  }
+
+  onEvent({ type: "warning", message: `Stopped after ${maxIterations} iterations.` });
+  return finish("max_iterations", "tool_use", maxIterations);
+}

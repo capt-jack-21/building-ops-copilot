@@ -9,7 +9,9 @@
     "typecheck": "tsc --noEmit",
     "example:01": "tsx src/examples/01-first-call.ts",
     "example:02": "tsx src/examples/02-explore-data.ts",
-    "example:03": "tsx src/examples/03-first-tool.ts"
+    "example:03": "tsx src/examples/03-first-tool.ts",
+    "example:04-checks": "tsx src/examples/04-loop-checks.ts",
+    "example:04": "tsx src/examples/04-agent-cli.ts"
   },
   "keywords": [],
   "author": "Adithya <captjacksparrow1109@gmail.com>",
