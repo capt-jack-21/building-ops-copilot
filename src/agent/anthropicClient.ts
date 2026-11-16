@@ -1,7 +1,33 @@
 ﻿import Anthropic from "@anthropic-ai/sdk";
-import type { AssistantBlock, LlmClient, LlmRequest, LlmResponse } from "./llm.js";
+import type { AssistantBlock, LlmClient, LlmRequest, LlmResponse, Message } from "./llm.js";
 
-/** Adapts the Anthropic SDK to our small LlmClient interface. */
+const EPHEMERAL = { type: "ephemeral" } as const;
+
+/** Copy our messages into SDK shape, with a cache breakpoint on the last block. */
+function toSdkMessages(messages: Message[]): Anthropic.MessageParam[] {
+  const out = messages.map((m) => ({
+    role: m.role,
+    content: typeof m.content === "string" ? m.content : m.content.map((b) => ({ ...b })),
+  })) as unknown as Anthropic.MessageParam[];
+
+  const last = out[out.length - 1];
+  if (last) {
+    if (typeof last.content === "string") {
+      last.content = [{ type: "text", text: last.content, cache_control: EPHEMERAL }];
+    } else {
+      const block = last.content[last.content.length - 1] as unknown as { cache_control?: unknown } | undefined;
+      if (block) block.cache_control = EPHEMERAL;
+    }
+  }
+  return out;
+}
+
+/**
+ * Adapts the Anthropic SDK to our small LlmClient interface.
+ * Prompt caching: breakpoints on the last tool, the system prompt and the last message,
+ * so each loop iteration re-reads the shared prefix from cache instead of paying full price.
+ * (Prompts below the model's minimum cacheable length are simply not cached.)
+ */
 export class AnthropicLlmClient implements LlmClient {
   private readonly client: Anthropic;
 
@@ -11,18 +37,21 @@ export class AnthropicLlmClient implements LlmClient {
   }
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
-    const res = await this.client.messages.create({
-      model: this.model,
-      max_tokens: req.maxTokens,
-      system: req.system,
-      tools: req.tools.map((t) => ({
-        name: t.name,
-        description: t.description,
-        input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
-      })),
-      // Our Message type is a strict subset of the SDK's shape.
-      messages: req.messages as unknown as Anthropic.MessageParam[],
-    });
+    const res = await this.client.messages.create(
+      {
+        model: this.model,
+        max_tokens: req.maxTokens,
+        system: [{ type: "text", text: req.system, cache_control: EPHEMERAL }],
+        tools: req.tools.map((t, i) => ({
+          name: t.name,
+          description: t.description,
+          input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
+          ...(i === req.tools.length - 1 ? { cache_control: EPHEMERAL } : {}),
+        })),
+        messages: toSdkMessages(req.messages),
+      },
+      req.signal ? { signal: req.signal } : undefined,
+    );
 
     const content: AssistantBlock[] = [];
     for (const b of res.content) {
@@ -32,7 +61,12 @@ export class AnthropicLlmClient implements LlmClient {
     return {
       content,
       stopReason: res.stop_reason,
-      usage: { inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens },
+      usage: {
+        inputTokens: res.usage.input_tokens,
+        outputTokens: res.usage.output_tokens,
+        cacheReadTokens: res.usage.cache_read_input_tokens ?? 0,
+        cacheWriteTokens: res.usage.cache_creation_input_tokens ?? 0,
+      },
     };
   }
 }

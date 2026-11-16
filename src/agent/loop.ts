@@ -5,7 +5,10 @@ import type { ApprovalBroker } from "../approvals/broker.js";
 import type { LlmClient, Message, ToolResultBlock, ToolUseBlock } from "./llm.js";
 
 export type AgentEvent =
-  | { type: "model_call"; iteration: number; stopReason: string | null; ms: number; inputTokens: number; outputTokens: number }
+  | {
+      type: "model_call"; iteration: number; stopReason: string | null; ms: number;
+      inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number;
+    }
   | { type: "text"; text: string }
   | { type: "tool_start"; id: string; name: string; input: unknown }
   | { type: "tool_result"; id: string; name: string; isError: boolean; ms: number; content: string }
@@ -22,6 +25,7 @@ export interface AgentOptions {
   system: string;
   policy?: Policy;
   approvals?: ApprovalBroker;
+  signal?: AbortSignal;
   maxTokens?: number;
   maxIterations?: number;
   onEvent?: (event: AgentEvent) => void;
@@ -35,6 +39,8 @@ export interface AgentResult {
   toolCalls: number;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
   totalMs: number;
 }
 
@@ -49,13 +55,14 @@ function unknownTool(name: string): ToolOutcome {
 /**
  * Run one user turn to completion. `history` is mutated: the user message, every
  * assistant turn and every tool_result turn are appended, so passing the same
- * array again continues the conversation.
+ * array again continues the conversation. If `signal` aborts, this throws at the
+ * next step; callers should discard the unfinished turn.
  */
 export async function runAgent(history: Message[], userText: string, opts: AgentOptions): Promise<AgentResult> {
-  const { llm, tools, ctx, system, policy, approvals, onEvent = () => undefined, maxTokens = 1024, maxIterations = 10 } = opts;
+  const { llm, tools, ctx, system, policy, approvals, signal, onEvent = () => undefined, maxTokens = 1024, maxIterations = 10 } = opts;
   const started = performance.now();
   const toolDefs = tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.jsonSchema }));
-  const stats = { toolCalls: 0, inputTokens: 0, outputTokens: 0 };
+  const stats = { toolCalls: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
   let lastText = "";
 
   const finish = (termination: Termination, stopReason: string | null, iterations: number): AgentResult => ({
@@ -63,9 +70,7 @@ export async function runAgent(history: Message[], userText: string, opts: Agent
     termination,
     stopReason,
     iterations,
-    toolCalls: stats.toolCalls,
-    inputTokens: stats.inputTokens,
-    outputTokens: stats.outputTokens,
+    ...stats,
     totalMs: performance.now() - started,
   });
 
@@ -91,13 +96,20 @@ export async function runAgent(history: Message[], userText: string, opts: Agent
   history.push({ role: "user", content: userText });
 
   for (let iteration = 1; iteration <= maxIterations; iteration++) {
+    signal?.throwIfAborted();
+
     const t0 = performance.now();
-    const res = await llm.complete({ system, tools: toolDefs, messages: history, maxTokens });
+    const res = await llm.complete({ system, tools: toolDefs, messages: history, maxTokens, signal });
+    const cacheRead = res.usage.cacheReadTokens ?? 0;
+    const cacheWrite = res.usage.cacheWriteTokens ?? 0;
     stats.inputTokens += res.usage.inputTokens;
     stats.outputTokens += res.usage.outputTokens;
+    stats.cacheReadTokens += cacheRead;
+    stats.cacheWriteTokens += cacheWrite;
     onEvent({
       type: "model_call", iteration, stopReason: res.stopReason, ms: performance.now() - t0,
       inputTokens: res.usage.inputTokens, outputTokens: res.usage.outputTokens,
+      cacheReadTokens: cacheRead, cacheWriteTokens: cacheWrite,
     });
 
     const uses = res.content.filter((b): b is ToolUseBlock => b.type === "tool_use");

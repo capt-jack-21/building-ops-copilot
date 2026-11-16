@@ -33,12 +33,21 @@ export interface LlmRequest {
   tools: LlmTool[];
   messages: Message[];
   maxTokens: number;
+  signal?: AbortSignal;
+}
+
+export interface LlmUsage {
+  /** Uncached input tokens only. Total input = inputTokens + cacheReadTokens + cacheWriteTokens. */
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
 }
 
 export interface LlmResponse {
   content: AssistantBlock[];
   stopReason: string | null;
-  usage: { inputTokens: number; outputTokens: number };
+  usage: LlmUsage;
 }
 
 /** The only thing the agent loop knows about the model. */

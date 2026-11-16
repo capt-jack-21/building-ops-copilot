@@ -52,3 +52,14 @@ A short record of how this project was built, one step at a time.
   - Never key a safety rule on a field the model chooses freely (a model could pick a lower priority to skip approval).
   - A declined action is a normal `permission` result; the prompt tells the model not to work around it.
   - No approver means denied (fail closed). Concurrent prompts are queued.
+
+## 08. Web UI
+
+- Goal: a chat UI over the SSE API with a live tool trace, approval buttons and a usage status bar.
+- Check: `npm run example:08-checks` (static files, CSP-safe, no unsafe DOM APIs, valid JS syntax).
+- Learned:
+  - Helmet's CSP blocks inline scripts, so the front-end is a separate file.
+  - Model output is untrusted: build DOM nodes with textContent, never innerHTML.
+  - A queue between the SSE reader and the renderer keeps animation from blocking the stream.
+  - Stop = abort the fetch; the server cancels the loop and denies pending approvals.
+  - Status bar sums input + cache read + cache write to show the real prompt size and hit rate.
