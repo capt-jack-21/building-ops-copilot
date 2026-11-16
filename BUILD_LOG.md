@@ -31,3 +31,13 @@ A short record of how this project was built, one step at a time.
   - A tool_use cut off by `max_tokens` must be dropped, or the next call fails.
   - Hiding the SDK behind an `LlmClient` interface makes the loop testable for free.
   - History is just an array; reusing it gives multi-turn memory.
+
+## 05. Tool registry and the full tool set
+
+- Goal: grow from one tool to seven (`list_buildings`, `list_meters`, `get_latest_reading`, `query_timeseries`, `compare_to_baseline`, `list_alarms`, `create_ticket`).
+- Examples: `npm run example:05-checks` (offline) and `npm run chat` (interactive, real API).
+- Learned:
+  - Tool descriptions are the main routing signal: say what it does, when to use it, and what it does not do.
+  - Bound tool output (200 buckets max) and make errors suggest a fix, so the model can self-correct.
+  - Do the arithmetic in code (baseline comparison), not in the model.
+  - Mark state-changing tools (`risk: "write"`); approvals come next.

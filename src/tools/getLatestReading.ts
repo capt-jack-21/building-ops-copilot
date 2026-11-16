@@ -6,7 +6,7 @@ export const getLatestReading = defineTool({
   description:
     "Get the most recent reading of one meter, including its value, unit and timestamp (UTC). " +
     "Use it when the user asks for the current value of a specific meter. " +
-    "Meter IDs look like m-01-main-kw. It returns only the latest sample, not history.",
+    "If you do not know the meter ID, call list_meters first. It returns only the latest sample; use query_timeseries for history.",
   risk: "read",
   inputSchema: z.object({
     meter_id: z.string().min(1).describe("Meter ID, for example m-01-main-kw"),
@@ -30,3 +30,4 @@ export const getLatestReading = defineTool({
     };
   },
 });
+

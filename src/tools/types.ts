@@ -33,7 +33,7 @@ export class ToolError extends Error {
 }
 
 function toJsonSchema(schema: z.ZodType): JsonSchema {
-  const json = z.toJSONSchema(schema) as unknown as Record<string, unknown>;
+  const json = z.toJSONSchema(schema, { io: "input" }) as unknown as Record<string, unknown>;
   delete json["$schema"];
   if (json["type"] !== "object") {
     throw new Error("Tool input schemas must be z.object(...)");
@@ -86,3 +86,4 @@ export async function executeTool(tool: Tool, rawInput: unknown, ctx: ToolContex
     return done(true, { error: { category: "internal", retryable: false, message: "Unexpected error while running the tool." } });
   }
 }
+
