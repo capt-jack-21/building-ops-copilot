@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "example:01": "tsx src/examples/01-first-call.ts"
+    "example:01": "tsx src/examples/01-first-call.ts",
+    "example:02": "tsx src/examples/02-explore-data.ts"
   },
   "keywords": [],
   "author": "Adithya <captjacksparrow1109@gmail.com>",
