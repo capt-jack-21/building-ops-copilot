@@ -41,12 +41,50 @@ function inline(parent, text) {
   if (last < text.length) parent.append(text.slice(last));
 }
 
+function splitRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((c) => c.trim());
+}
+
+/** Build a <table> from pipe-delimited lines (header, separator, rows). Cells go through inline(), never innerHTML. */
+function renderTable(container, rows) {
+  const isSep = (r) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(r);
+  const hasHead = rows.length > 1 && isSep(rows[1]);
+  const body = rows.filter((r, i) => !(hasHead && i === 1));
+  const wrap = el("div", "md-table");
+  const table = el("table");
+  body.forEach((r, i) => {
+    const tr = el("tr");
+    for (const cell of splitRow(r)) {
+      const td = el(hasHead && i === 0 ? "th" : "td");
+      inline(td, cell);
+      tr.append(td);
+    }
+    table.append(tr);
+  });
+  wrap.append(table);
+  container.append(wrap);
+}
+
 function renderMarkdown(container, text) {
   container.textContent = "";
   let list = null;
   let para = null;
-  for (const raw of text.split("\n")) {
-    const line = raw.trimEnd();
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimEnd();
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      const rows = [line];
+      while (i + 1 < lines.length && /^\s*\|.*\|\s*$/.test(lines[i + 1])) rows.push(lines[++i].trimEnd());
+      list = null;
+      para = null;
+      renderTable(container, rows);
+      continue;
+    }
     const bullet = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
     if (bullet) {
       if (!list) {

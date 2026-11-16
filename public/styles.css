@@ -1141,3 +1141,10 @@ body.calm *::before,
 body.calm *::after {
   animation: none !important;
 }
+
+/* markdown tables */
+.md .md-table { overflow-x: auto; margin: 8px 0; }
+.md table { border-collapse: collapse; width: 100%; font: 12.5px var(--mono); }
+.md th, .md td { border: 1px solid var(--line2); padding: 6px 10px; text-align: left; white-space: nowrap; }
+.md th { color: var(--accent); background: var(--accent-dim); font-weight: 600; letter-spacing: 0.04em; }
+.md tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
