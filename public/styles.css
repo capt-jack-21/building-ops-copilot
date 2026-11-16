@@ -109,3 +109,10 @@ pre.json { margin: 0; padding: 10px; background: #0a1118; border: 1px solid var(
 .stat .v.good { color: var(--good); }
 
 @media (max-width: 820px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+/* fixes: collapsed tool cards, dark scrollbars, expand arrow */
+:root { color-scheme: dark; }
+* { scrollbar-color: #2a3a50 transparent; }
+details.tool:not([open]) > .tool-body { display: none; }
+details.tool > summary::before { content: "\25B8"; color: var(--muted); font-size: 12px; transition: transform 0.15s; }
+details.tool[open] > summary::before { transform: rotate(90deg); }
