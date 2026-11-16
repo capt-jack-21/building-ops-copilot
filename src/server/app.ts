@@ -54,7 +54,7 @@ function publicMessage(err: unknown): string {
 
 /** Keep SSE payloads bounded. */
 function forClient(e: AgentEvent): AgentEvent {
-  return e.type === "tool_result" ? { ...e, content: e.content.slice(0, 20_000) } : e;
+  return e.type === "tool_result" ? { ...e, content: e.content.slice(0, 100_000) } : e;
 }
 
 export function createApp(deps: AppDeps): express.Express {
@@ -180,3 +180,5 @@ export function createApp(deps: AppDeps): express.Express {
 
   return app;
 }
+
+

@@ -63,3 +63,12 @@ A short record of how this project was built, one step at a time.
   - A queue between the SSE reader and the renderer keeps animation from blocking the stream.
   - Stop = abort the fetch; the server cancels the loop and denies pending approvals.
   - Status bar sums input + cache read + cache write to show the real prompt size and hit rate.
+
+## 08b. Charts and live loop view
+
+- Goal: make the agent's work visible: inline time-series charts and a live loop strip.
+- Learned:
+  - Tool results are data; the UI can render richer views from them without asking the model.
+  - Plain SVG built with DOM calls keeps the app dependency-free and CSP/XSS-safe.
+  - Server-side truncation of JSON breaks client-side parsing; set limits deliberately.
+  - Mapping SSE events to a small state machine is enough for a live "how the agent thinks" view.

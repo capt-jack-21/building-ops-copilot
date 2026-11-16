@@ -116,3 +116,59 @@ pre.json { margin: 0; padding: 10px; background: #0a1118; border: 1px solid var(
 details.tool:not([open]) > .tool-body { display: none; }
 details.tool > summary::before { content: "\25B8"; color: var(--muted); font-size: 12px; transition: transform 0.15s; }
 details.tool[open] > summary::before { transform: rotate(90deg); }
+
+/* agent-loop strip */
+.loop { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; }
+.loop i { font-style: normal; color: var(--line); }
+.ln { padding: 4px 12px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); transition: all 0.2s; }
+.ln.seen { color: var(--text); border-color: rgba(61, 214, 198, 0.35); }
+.ln.active { color: #05221f; background: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px rgba(61, 214, 198, 0.5); animation: glow 1.2s infinite ease-in-out; }
+.ln.wait { color: #2b1c00; background: var(--warn); border-color: var(--warn); box-shadow: 0 0 14px rgba(245, 185, 74, 0.5); animation: glow 1.2s infinite ease-in-out; }
+@keyframes glow { 50% { opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .ln.active, .ln.wait { animation: none; } }
+
+/* inline charts */
+figure.chart { margin: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 10px 12px 6px; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; margin-bottom: 4px; }
+.chart-title { font-family: var(--mono); font-size: 13px; color: var(--blue); }
+.chart-stats { font: 12px var(--mono); color: var(--muted); }
+.chart-stats b { color: var(--text); font-weight: 600; }
+figure.chart svg { display: block; width: 100%; height: auto; }
+.c-grid { stroke: var(--line); stroke-width: 1; }
+.c-axis { fill: var(--muted); font: 10.5px var(--mono); }
+.c-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.c-area { fill: rgba(61, 214, 198, 0.12); stroke: none; }
+.c-low { fill: var(--bad); }
+.c-low-t { fill: var(--bad); font: 600 11px var(--mono); }
+.c-cursor { stroke: var(--muted); stroke-dasharray: 3 3; }
+.c-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+.c-read { fill: var(--text); font: 600 11.5px var(--mono); }
+.c-hit { fill: transparent; }
+
+/* agent-loop strip */
+.loop { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; }
+.loop i { font-style: normal; color: var(--line); }
+.ln { padding: 4px 12px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); transition: all 0.2s; }
+.ln.seen { color: var(--text); border-color: rgba(61, 214, 198, 0.35); }
+.ln.active { color: #05221f; background: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px rgba(61, 214, 198, 0.5); animation: glow 1.2s infinite ease-in-out; }
+.ln.wait { color: #2b1c00; background: var(--warn); border-color: var(--warn); box-shadow: 0 0 14px rgba(245, 185, 74, 0.5); animation: glow 1.2s infinite ease-in-out; }
+@keyframes glow { 50% { opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .ln.active, .ln.wait { animation: none; } }
+
+/* inline charts */
+figure.chart { margin: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); padding: 10px 12px 6px; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; margin-bottom: 4px; }
+.chart-title { font-family: var(--mono); font-size: 13px; color: var(--blue); }
+.chart-stats { font: 12px var(--mono); color: var(--muted); }
+.chart-stats b { color: var(--text); font-weight: 600; }
+figure.chart svg { display: block; width: 100%; height: auto; }
+.c-grid { stroke: var(--line); stroke-width: 1; }
+.c-axis { fill: var(--muted); font: 10.5px var(--mono); }
+.c-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.c-area { fill: rgba(61, 214, 198, 0.12); stroke: none; }
+.c-low { fill: var(--bad); }
+.c-low-t { fill: var(--bad); font: 600 11px var(--mono); }
+.c-cursor { stroke: var(--muted); stroke-dasharray: 3 3; }
+.c-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+.c-read { fill: var(--text); font: 600 11.5px var(--mono); }
+.c-hit { fill: transparent; }

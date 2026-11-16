@@ -33,12 +33,12 @@
           <div id="mode-badge" class="badge">connecting...</div>
         </header>
 
-        <section id="messages" class="messages" aria-live="polite">
+        <div id="loop" class="loop" aria-hidden="true"><span class="ln" data-n="you">You</span><i>&rarr;</i><span class="ln" data-n="model">Model</span><i>&rarr;</i><span class="ln" data-n="tools">Tools</span><i>&rarr;</i><span class="ln" data-n="approval">Approval</span><i>&rarr;</i><span class="ln" data-n="answer">Answer</span></div><section id="messages" class="messages" aria-live="polite">
           <div id="welcome" class="welcome">
             <h1>What do you want to know about your buildings?</h1>
             <p>Ask about alarms, meters and trends. The copilot calls tools, shows each step, and asks you before it changes anything.</p>
             <div class="chips">
-              <button class="chip" type="button">Any active alarms?</button>
+              <button class="chip" type="button">Any active alarms?</button><button class="chip" type="button">Show chiller 2 power for the last 24 hours</button>
               <button class="chip" type="button">Why did chiller 2 trip overnight?</button>
               <button class="chip" type="button">Is the generator fuel low in Coimbatore?</button>
               <button class="chip" type="button">Create a critical ticket for the chiller trip</button>
@@ -63,6 +63,7 @@
         </footer>
       </main>
     </div>
-    <script src="/app.js" defer></script>
+    <script src="/charts.js" defer></script><script src="/app.js" defer></script>
   </body>
 </html>
+

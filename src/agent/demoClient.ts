@@ -28,6 +28,7 @@ function plan(text: string): AssistantBlock[] | undefined {
       }),
     ];
   }
+  if (/trend|chart|plot|power|24 h/.test(t)) return [use("query_timeseries", { meter_id: "m-01-ch2-kw", from: new Date(Date.now() - 24 * 3600_000).toISOString(), to: new Date().toISOString(), bucket: "1h" })];
   if (t.includes("alarm")) return [use("list_alarms", { active_only: true })];
   if (t.includes("chiller") || t.includes("trip")) {
     return [use("list_alarms", { building_id: "bld-01", severity: "critical" }), use("get_latest_reading", { meter_id: "m-01-ch2-kw" })];
@@ -90,3 +91,4 @@ export class DemoLlmClient implements LlmClient {
     throw new Error("The demo client cannot continue from this conversation state.");
   }
 }
+

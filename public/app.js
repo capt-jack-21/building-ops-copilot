@@ -254,7 +254,7 @@ function approvalCard(turn, d) {
   add(turn, card);
 }
 
-async function handle(turn, ev) {
+async function handle(turn, ev) { if (window.OpsUi) window.OpsUi.onEvent(ev);
   const d = ev.data;
   switch (ev.event) {
     case "session":
@@ -297,7 +297,7 @@ async function handle(turn, ev) {
         tool.status.textContent = d.isError ? `error \u00b7 ${d.ms.toFixed(1)} ms` : `${d.ms.toFixed(1)} ms`;
         tool.status.className = "tstatus " + (d.isError ? "err" : "ok");
         tool.result.textContent = pretty(d.content);
-        if (d.isError) tool.card.classList.add("error");
+        if (d.isError) tool.card.classList.add("error"); if (window.OpsUi) window.OpsUi.afterToolResult(tool.card, d);
       }
       break;
     }
@@ -365,7 +365,7 @@ function setRunning(running) {
 async function send(text) {
   setRunning(true);
   addUser(text);
-  const turn = newTurn();
+  const turn = newTurn(); if (window.OpsUi) window.OpsUi.onEvent({ event: "start", data: {} });
   state.turn = turn;
   const controller = new AbortController();
   state.controller = controller;
@@ -430,7 +430,7 @@ async function send(text) {
   await consumer;
 
   for (const entry of turn.approvals.values()) settleApproval(entry, "Cancelled", "no");
-  turn.thinking.remove();
+  turn.thinking.remove(); if (window.OpsUi) window.OpsUi.onEvent({ event: "end", data: {} });
   state.controller = null;
   setRunning(false);
   input.focus();
@@ -511,3 +511,4 @@ async function loadMeta() {
 renderStatus();
 loadMeta();
 input.focus();
+
