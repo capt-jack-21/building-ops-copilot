@@ -18,7 +18,8 @@
     "example:07-checks": "tsx src/examples/07-server-checks.ts",
     "dev:watch": "tsx watch src/index.ts",
     "smoke": "tsx src/examples/07-smoke-client.ts",
-    "example:08-checks": "tsx src/examples/08-ui-checks.ts"
+    "example:08-checks": "tsx src/examples/08-ui-checks.ts",
+    "example:09-checks": "tsx src/examples/09-twin-checks.ts"
   },
   "keywords": [],
   "author": "Adithya <captjacksparrow1109@gmail.com>",

@@ -72,3 +72,12 @@ A short record of how this project was built, one step at a time.
   - Plain SVG built with DOM calls keeps the app dependency-free and CSP/XSS-safe.
   - Server-side truncation of JSON breaks client-side parsing; set limits deliberately.
   - Mapping SSE events to a small state machine is enough for a live "how the agent thinks" view.
+
+## 09d. Building twin
+
+- Goal: show the physical system the agent reasons about, and link tool calls to equipment.
+- Learned:
+  - The repository needed `listAssets()`; adding a method to the interface keeps the in-memory and future TimescaleDB repositories swappable.
+  - A snapshot endpoint (`/api/twin`) with a meter -> asset map lets the UI resolve any tool call to a tile.
+  - "Recovered" (cleared in the last 24 h) tells a better story than hiding resolved alarms.
+  - Pulses need a minimum hold time: tool calls finish in milliseconds.

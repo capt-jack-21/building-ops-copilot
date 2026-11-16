@@ -12,6 +12,7 @@ import type { ToolRegistry } from "../tools/registry.js";
 import type { ToolContext } from "../tools/types.js";
 import type { SessionStore } from "./sessions.js";
 import { openSse } from "./sse.js";
+import { buildTwin } from "./twin.js";
 
 export interface AppDeps {
   llm: LlmClient;
@@ -73,6 +74,16 @@ export function createApp(deps: AppDeps): express.Express {
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", model: deps.model, demo: deps.demo, tools: deps.registry.size, uptime_s: Math.round(process.uptime()) });
+  });
+
+  app.get("/api/twin", async (_req, res) => {
+    try {
+      res.set("Cache-Control", "no-store");
+      res.json(await buildTwin(deps.ctx.repo, deps.ctx.now()));
+    } catch (err) {
+      console.error("[twin] snapshot failed:", err);
+      res.status(500).json(apiError("server_error", "Could not build the building twin."));
+    }
   });
 
   app.get("/api/tools", (_req, res) => {
@@ -180,5 +191,6 @@ export function createApp(deps: AppDeps): express.Express {
 
   return app;
 }
+
 
 

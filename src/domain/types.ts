@@ -76,6 +76,7 @@ export interface AlarmFilter {
  */
 export interface TelemetryRepository {
   listBuildings(): Promise<Building[]>;
+  listAssets(buildingId?: string): Promise<Asset[]>;
   listMeters(filter?: MeterFilter): Promise<Meter[]>;
   getMeter(meterId: string): Promise<Meter | undefined>;
   getLatest(meterId: string): Promise<Reading | undefined>;
@@ -83,3 +84,4 @@ export interface TelemetryRepository {
   listAlarms(filter?: AlarmFilter): Promise<Alarm[]>;
   createTicket(input: NewTicket): Promise<Ticket>;
 }
+

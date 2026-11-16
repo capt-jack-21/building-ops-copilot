@@ -32,11 +32,17 @@ const server = app.listen(0, "127.0.0.1");
 await new Promise<void>((resolve) => server.once("listening", () => resolve()));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 
+// Every element id the front-end JavaScript looks up. A missing id means a broken UI.
+const REQUIRED_IDS = [
+  "new-chat", "tool-count", "tool-list", "mode-badge", "messages", "welcome", "composer", "input", "send",
+  "st-in", "st-out", "st-cr", "st-cw", "st-hit", "st-calls", "st-tools", "st-sid", "loop", "clock", "gauge", "toollog", "twin",
+];
+
 try {
   const page = await fetch(`${base}/`);
   const html = await page.text();
   check("GET / serves the HTML page", page.status === 200 && (page.headers.get("content-type") ?? "").includes("text/html") && html.includes("Building Ops Copilot"));
-  check("page links /app.js and /styles.css", html.includes('src="/app.js"') && html.includes('href="/styles.css"'));
+  check("page links the stylesheet", html.includes('href="/styles.css"'));
 
   const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
   check("no inline scripts (CSP-safe)", scriptTags.length > 0 && scriptTags.every((tag) => /\ssrc=/.test(tag)), `${scriptTags.length} script tag(s)`);
@@ -47,20 +53,23 @@ try {
   const css = await fetch(`${base}/styles.css`);
   check("GET /styles.css", css.status === 200 && (css.headers.get("content-type") ?? "").includes("text/css"));
 
-  const js = await fetch(`${base}/app.js`);
-  const source = await js.text();
-  check("GET /app.js", js.status === 200 && (js.headers.get("content-type") ?? "").includes("javascript") && source.includes("/api/chat"));
+  const missing = REQUIRED_IDS.filter((id) => !html.includes(`id="${id}"`));
+  check("all element ids used by the JS exist in the HTML", missing.length === 0, missing.length ? "missing: " + missing.join(", ") : `${REQUIRED_IDS.length} ids`);
 
-  let syntaxOk = true;
-  try {
-    new Function(source); // compiles only, never runs
-  } catch (err) {
-    syntaxOk = false;
-    console.log("  syntax error:", err instanceof Error ? err.message : err);
+  const scripts = [...html.matchAll(/<script\b[^>]*\ssrc="([^"]+)"/gi)].map((m) => m[1] ?? "");
+  for (const src of scripts) {
+    const res = await fetch(`${base}${src}`);
+    const source = await res.text();
+    let syntaxOk = true;
+    try {
+      new Function(source); // compiles only, never runs
+    } catch (err) {
+      syntaxOk = false;
+      console.log("  syntax error:", err instanceof Error ? err.message : err);
+    }
+    const safe = !/innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/.test(source);
+    check(`script ${src}: served, valid syntax, no unsafe DOM APIs`, res.status === 200 && (res.headers.get("content-type") ?? "").includes("javascript") && syntaxOk && safe);
   }
-  check("app.js has valid syntax", syntaxOk);
-
-  check("app.js avoids unsafe DOM APIs (XSS guard)", !/innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(/.test(source));
 
   console.log(failures === 0 ? "\nALL CHECKS PASSED" : `\n${failures} CHECK(S) FAILED`);
   if (failures > 0) process.exitCode = 1;
@@ -71,3 +80,4 @@ try {
   server.closeAllConnections();
   server.close();
 }
+

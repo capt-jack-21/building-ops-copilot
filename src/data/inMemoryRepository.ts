@@ -1,6 +1,7 @@
 ﻿import type {
   Alarm,
   AlarmFilter,
+  Asset,
   Building,
   Meter,
   MeterFilter,
@@ -18,6 +19,10 @@ export class InMemoryRepository implements TelemetryRepository {
 
   async listBuildings(): Promise<Building[]> {
     return this.data.buildings;
+  }
+
+  async listAssets(buildingId?: string): Promise<Asset[]> {
+    return this.data.assets.filter((a) => !buildingId || a.buildingId === buildingId);
   }
 
   async listMeters(filter: MeterFilter = {}): Promise<Meter[]> {
@@ -74,3 +79,4 @@ export class InMemoryRepository implements TelemetryRepository {
     return ticket;
   }
 }
+
